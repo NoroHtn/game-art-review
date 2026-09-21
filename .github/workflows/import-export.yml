@@ -1,0 +1,143 @@
+name: Import approved website ZIP
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-export.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: approved-export-import
+  cancel-in-progress: false
+
+env:
+  IMPORT_TAG: pages-import-v14
+
+jobs:
+  prepare-upload:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pages: read
+    steps:
+      - name: Prepare the ZIP upload release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/import-notes.md" <<'NOTES'
+          ## Upload the original website ZIP here
+
+          This draft is a transfer step for the existing Game Art Review website, not a redesigned version.
+
+          1. In this repository's **Settings → Pages**, set **Source → GitHub Actions**.
+          2. Attach **game-art-review-github-pages(1).zip** or **game-art-review-github-pages.zip** using the file attachment area below. Upload the ZIP itself; do not extract it.
+          3. Wait until its upload is complete, then click **Publish release**.
+
+          The importer checks the archive's SHA-256, safely extracts all 152 files into the repository root, verifies the original presentation PDF, commits the complete website to main, and triggers the Pages deployment.
+
+          Expected archive: 87,110,420 bytes.
+          SHA-256: `32f76f4bcd28fd7efb11427a43de6223d34682655077eeff24aeea9a690a2fa5`
+
+          Deployment runs appear in the repository's **Actions** tab. The site is not live until the **Deploy Game Art Review** workflow succeeds.
+          NOTES
+          if ! gh release view "$IMPORT_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$IMPORT_TAG" --repo "$GITHUB_REPOSITORY" --target main --draft --title 'Website import - upload your ZIP here' --notes-file "$RUNNER_TEMP/import-notes.md"
+          fi
+          gh release view "$IMPORT_TAG" --repo "$GITHUB_REPOSITORY" --json url,isDraft
+          echo 'The draft release is ready for the original ZIP upload.' >> "$GITHUB_STEP_SUMMARY"
+          if pages=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '{build_type,html_url,status}' 2>/dev/null); then
+            echo "Pages configuration: $pages"
+            echo "Pages configuration: $pages" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Pages is not configured or is not readable with this workflow token. Select Settings → Pages → Source → GitHub Actions before publishing the import release.'
+          fi
+
+  import:
+    if: (github.event_name == 'release' && github.event.release.tag_name == 'pages-import-v14') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Download the original export from this repository's release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/website-export"
+          gh release download "$IMPORT_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'game-art-review-github-pages*.zip' --dir "$RUNNER_TEMP/website-export"
+      - name: Verify and import all approved files
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, stat, zipfile
+          from pathlib import Path, PurePosixPath
+          expected = '32f76f4bcd28fd7efb11427a43de6223d34682655077eeff24aeea9a690a2fa5'
+          expected_pdf = '82ac984c16fefbb4fedfce3b64e59e7f0a1832034a37e42dc5f784a3fd0a8db4'
+          temp = Path(os.environ['RUNNER_TEMP'])
+          archives = list((temp / 'website-export').glob('*.zip'))
+          if len(archives) != 1:
+              raise SystemExit('Attach exactly one original export ZIP to the import release.')
+          archive = archives[0]
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          if archive.stat().st_size != 87110420 or digest != expected:
+              raise SystemExit('The ZIP does not match the approved export. No website files were changed. SHA256: ' + digest)
+          staging = temp / 'verified-export'
+          staging.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile(archive) as z:
+              files = [f for f in z.infolist() if not f.is_dir()]
+              if len(files) != 152 or sum(f.file_size for f in files) != 94026795:
+                  raise SystemExit('Unexpected archive inventory.')
+              for info in files:
+                  path = PurePosixPath(info.filename)
+                  if path.is_absolute() or '..' in path.parts or path.parts[0] != 'game-art-review':
+                      raise SystemExit('Unsafe archive path: ' + info.filename)
+                  relative = Path(*path.parts[1:])
+                  if not relative.parts or relative.parts[0] in {'.git', '.github'} or stat.S_ISLNK(info.external_attr >> 16):
+                      raise SystemExit('Disallowed archive entry: ' + info.filename)
+                  target = staging / relative
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  with z.open(info) as source, target.open('wb') as out:
+                      shutil.copyfileobj(source, out)
+          pdf = staging / 'assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf'
+          if hashlib.sha256(pdf.read_bytes()).hexdigest() != expected_pdf:
+              raise SystemExit('Presentation PDF checksum mismatch.')
+          for file in staging.rglob('*'):
+              if file.is_file():
+                  target = Path.cwd() / file.relative_to(staging)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(file, target)
+          verification = {'archive_sha256': digest, 'files_imported': 152, 'total_original_bytes': 94026795, 'presentation_sha256': expected_pdf, 'source_version': 14, 'base_path': '/game-art-review/'}
+          Path('.github/import-verification.json').write_text(json.dumps(verification, indent=2) + '\n')
+          print('Imported all 152 files and verified the byte-identical presentation PDF.')
+          PY
+      - name: Check JavaScript syntax
+        run: |
+          find . -path './.git' -prune -o -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+      - name: Commit the complete website
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          if ! git diff --cached --quiet; then
+            git commit -m 'Import complete approved website export - all 152 files unchanged'
+            git push origin HEAD:main
+          fi
+      - name: Start Pages deployment from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo 'All 152 original files are committed. The Deploy Game Art Review workflow has been started on main.' >> "$GITHUB_STEP_SUMMARY"
