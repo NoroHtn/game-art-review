@@ -23,91 +23,92 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Import the supplied image and update only the Environment presentation
+      - name: Replace only the supplied main environment route image
         run: |
           python3 - <<'PY'
-          import hashlib, json, re, urllib.request
+          import hashlib, json, re, struct, urllib.request
           from pathlib import Path
 
-          version = '20260921-environment-v1'
+          version = '20260922-environment-route-v2'
           image = Path('assets/instant-final/art/environment-overview.png')
-          expected = 'b2d73dab0156a0d1baed6999081120fe7cd3c120256a5df3407314b9b463ef2a'
-          url = 'https://pikaso.cdnpk.net/private/production/5512576109/3622119033.png?token=exp=1790294400~hmac=5dcab4df728198369179c0cbd8be14657a06ed15eee4f4b5b6e08a230dc0902f'
-          if not image.exists() or hashlib.sha256(image.read_bytes()).hexdigest() != expected:
+          expected = 'a5a708c96776b3c3ae6257e766185767723305edb690d9b3801c027ad4ef3daa'
+          url = 'https://pikaso.cdnpk.net/private/production/5512807611/3622228693.png?token=exp=1790294400~hmac=98724b57a2c286d7909b1687a69cc67c5ce4e74e46d1eddcfd454ca0f04e6ac9'
+          if image.exists() and hashlib.sha256(image.read_bytes()).hexdigest() == expected:
+              data = image.read_bytes()
+          else:
               request = urllib.request.Request(url, headers={'User-Agent': 'GameArtReview-AssetImport/1.0'})
               with urllib.request.urlopen(request, timeout=90) as response:
                   data = response.read()
-              if hashlib.sha256(data).hexdigest() != expected:
-                  raise SystemExit('The downloaded image does not match the supplied original PNG.')
-              image.parent.mkdir(parents=True, exist_ok=True)
-              image.write_bytes(data)
-
-          extra_files = [
-              '8DE0DFBE-D82A-4782-AB74-D2524A0C4BA6.webp',
-              'F982C7ED-7785-4E4F-85E4-7C7DF54AD07F.webp',
-              '419855C5-4950-46AC-8252-38AEF175F3D4.webp',
-          ]
-          manifest = json.loads(Path('assets/instant-final/manifest.json').read_text())
-          for filename in extra_files:
-              assert (image.parent / filename).is_file(), filename
-              assert sum(a['file'] == filename for a in manifest['assets']) == 1, filename
+          assert hashlib.sha256(data).hexdigest() == expected, 'Downloaded PNG differs from the user upload.'
+          assert data[:8] == b'\x89PNG\r\n\x1a\n', 'Not a PNG.'
+          assert struct.unpack('>II', data[16:24]) == (374, 1412), 'Unexpected image dimensions.'
 
           path = Path('instant-review.js')
-          text = path.read_text()
-          if 'const environmentExtraFiles=' not in text:
-              helpers = ''' const environmentExtraFiles=['8DE0DFBE-D82A-4782-AB74-D2524A0C4BA6.webp','F982C7ED-7785-4E4F-85E4-7C7DF54AD07F.webp','419855C5-4950-46AC-8252-38AEF175F3D4.webp'];
-           const mainEnvironment=()=>fig('art/environment-overview.png','Main environment · complete route','Full composition, from the starting ship to the treasure island.').replace('class="pirate-figure"','class="pirate-figure instant-environment-hero"').replace('loading="lazy"','loading="eager" fetchpriority="high" width="375" height="1818"');
-           const environmentGallery=()=>`<div class="instant-asset-grid" aria-label="Environment assets">${[...m.assets.filter(a=>a.category==='environment'&&!environmentExtraFiles.includes(a.file)),...environmentExtraFiles.map(file=>m.assets.find(a=>a.file===file))].filter(Boolean).map(a=>fig('art/'+a.file,a.title)).join('')}</div>`;
-          '''
-              assert text.count(' const pages={') == 1, 'Page map changed; refusing an unsafe edit.'
-              text = text.replace(' const pages={', helpers + ' const pages={', 1)
-              old = next(line for line in text.splitlines() if line.lstrip().startswith('environment:'))
-              assert old.count("+gallery('environment')+") == 1, 'Environment renderer changed.'
-              new = old.replace("+gallery('environment')+", '+mainEnvironment()+environmentGallery()+', 1)
-              text = text.replace(old, new, 1)
-          assert '+mainEnvironment()+environmentGallery()+' in text
-          text, count = re.subn(r"instant-review\.css\?v=[^'\"]+", 'instant-review.css?v=' + version, text)
-          assert count == 1, 'Stylesheet reference changed.'
-          path.write_text(text)
-
-          css = Path('instant-review.css')
-          styles = css.read_text()
-          if '/* Environment overview: preserve the entire supplied composition. */' not in styles:
-              styles += '''
-          /* Environment overview: preserve the entire supplied composition. */
-          .pirate-review .pirate-figure.instant-environment-hero{width:100%;max-width:420px;margin:0 auto 36px;box-sizing:border-box}
-          .pirate-review .instant-environment-hero a{display:block}
-          .pirate-review .instant-environment-hero img{display:block;width:100%;height:auto;max-height:none;object-fit:contain;padding:0}
-          '''
-              css.write_text(styles)
+          original = path.read_text()
+          matches = [line for line in original.splitlines() if line.lstrip().startswith('const mainEnvironment=')]
+          assert len(matches) == 1, 'Main environment renderer changed; refusing an unsafe edit.'
+          old = matches[0]
+          assert 'Main environment · complete route' in old
+          assert 'Full composition, from the starting ship to the treasure island.' in old
+          new, count = re.subn(r"art/environment-overview\.png(?:\?v=[^']+)?", 'art/environment-overview.png?v=' + version, old)
+          assert count == 1, 'Main environment image reference changed.'
+          new, count = re.subn(r'width="\d+" height="\d+"', 'width="374" height="1412"', new)
+          assert count == 1, 'Main environment image dimensions changed.'
+          updated = original.replace(old, new, 1)
+          assert updated.replace(new, old, 1) == original, 'Unexpected change outside the main environment renderer.'
 
           site = Path('site.js')
-          text, count = re.subn(r"instant-review\.js\?v=[^'\"]+", 'instant-review.js?v=' + version, site.read_text())
-          assert count == 1, 'Instant module reference changed.'
-          site.write_text(text)
+          site_original = site.read_text()
+          module_pattern = r"/game-art-review/instant-review\.js\?v=[^'\"]+"
+          modules = re.findall(module_pattern, site_original)
+          assert len(modules) == 1, 'Instant module loader changed.'
+          module_url = '/game-art-review/instant-review.js?v=' + version
+          site_updated, count = re.subn(module_pattern, module_url, site_original)
+          assert count == 1
+
           index = Path('instant/index.html')
-          text, count = re.subn(r'site\.js\?v=[^\"]+', 'site.js?v=' + version, index.read_text())
+          html = index.read_text()
+          import_map_pattern = r'(<script type="importmap">)(.*?)(</script>)'
+          def update_import_map(match):
+              value = json.loads(match.group(2))
+              imports = value.setdefault('imports', {})
+              for key, target in list(imports.items()):
+                  if isinstance(target, str) and '/instant-review.js' in target:
+                      imports[key] = module_url
+              imports[modules[0]] = module_url
+              return match.group(1) + json.dumps(value, separators=(',', ':')) + match.group(3)
+          if 'type="importmap"' in html:
+              html, count = re.subn(import_map_pattern, update_import_map, html, flags=re.S)
+              assert count == 1, 'Instant import map changed.'
+          html, count = re.subn(r'site\.js\?v=[^\"]+', 'site.js?v=' + version, html)
           assert count == 1, 'Instant entry point changed.'
-          index.write_text(text)
-          print('Imported byte-identical main PNG (375 x 1818).')
-          print('Preserved', sum(a['category']=='environment' for a in manifest['assets']), 'existing environment assets; appended mermaid tail and the two tentacles in the supplied order.')
-          print('The manifest, character artwork, art-direction references, PDFs and other page content are unchanged.')
+
+          image.parent.mkdir(parents=True, exist_ok=True)
+          image.write_bytes(data)
+          path.write_text(updated)
+          site.write_text(site_updated)
+          index.write_text(html)
+          print('Replaced the main environment image with the byte-identical user PNG: 374 x 1412.')
+          print('SHA-256:', expected)
+          print('Only the main environment image, its dimensions and cache versions were changed.')
+          print('All other images, captions, galleries, styles, PDFs and sections are preserved.')
           PY
       - name: Validate JavaScript
         run: |
           node --check instant-review.js
           node --check site.js
-      - name: Commit the environment update
+      - name: Commit the environment image replacement
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/instant-final/art/environment-overview.png instant-review.js instant-review.css site.js instant/index.html
+          git add assets/instant-final/art/environment-overview.png instant-review.js site.js instant/index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Show full environment overview first and include mermaid tail and both tentacles'
+            git diff --cached --stat
+            git commit -m 'Replace Main environment complete route with the latest 374x1412 upload'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
-          echo "Environment update commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Environment image replacement commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
       - name: Publish through the existing GitHub Pages workflow
         env:
           GH_TOKEN: ${{ github.token }}
