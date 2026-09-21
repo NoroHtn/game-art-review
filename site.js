@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-final');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-refs9');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {

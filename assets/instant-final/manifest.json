@@ -149,44 +149,12 @@
       "source": "IMG_4798.JPG"
     },
     {
-      "file": "ref-03.jpg",
-      "source": "IMG_4799.JPG"
-    },
-    {
-      "file": "ref-04.jpg",
-      "source": "IMG_4794.JPG"
-    },
-    {
-      "file": "ref-05.jpg",
-      "source": "IMG_4795.JPG"
-    },
-    {
       "file": "ref-06.jpg",
       "source": "IMG_4797.JPG"
     },
     {
-      "file": "ref-07.jpg",
-      "source": "IMG_4796.JPG"
-    },
-    {
       "file": "ref-08.jpg",
       "source": "IMG_4789.jpg"
-    },
-    {
-      "file": "ref-09.jpg",
-      "source": "IMG_4792.JPG"
-    },
-    {
-      "file": "ref-10.jpg",
-      "source": "IMG_4793.JPG"
-    },
-    {
-      "file": "ref-11.jpg",
-      "source": "IMG_4787.JPG"
-    },
-    {
-      "file": "ref-12.jpg",
-      "source": "IMG_4801.JPG"
     },
     {
       "file": "ref-13.jpg",
@@ -197,8 +165,16 @@
       "source": "IMG_4790.JPG"
     },
     {
-      "file": "ref-15.jpg",
-      "source": "IMG_4800.JPG"
+      "file": "ref-04.jpg",
+      "source": "IMG_4794.JPG"
+    },
+    {
+      "file": "ref-12.jpg",
+      "source": "IMG_4801.JPG"
+    },
+    {
+      "file": "ref-09-barrel.jpg",
+      "source": "IMG_4792(2).jpeg"
     }
   ],
   "figma": "https://www.figma.com/design/L7QrdpDcaaWx9GkEgHsWWj/Norair-Harutyunyan-Test-Task---INSTANT-GAME--?node-id=8-10993&p=f&t=Iio8oZWtIOWxkWzD-0"
