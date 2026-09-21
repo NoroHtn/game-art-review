@@ -1,0 +1,51 @@
+name: Restore full-size presentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'source-notes/pdf-upload/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: restore-presentation
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore the original PDF without changing its bytes
+        env:
+          EXPECTED_SHA256: 82ac984c16fefbb4fedfce3b64e59e7f0a1832034a37e42dc5f784a3fd0a8db4
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          parts = Path("source-notes/pdf-upload")
+          if not parts.exists():
+              print("Presentation already restored.")
+              raise SystemExit(0)
+          data = b"".join((parts / name).read_bytes() for name in ["part-01.bin", "part-02.bin"])
+          assert hashlib.sha256(data).hexdigest() == os.environ["EXPECTED_SHA256"], "PDF checksum mismatch"
+          target = Path("assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(data)
+          for name in ["part-01.bin", "part-02.bin"]:
+              (parts / name).unlink()
+          parts.rmdir()
+          print(f"Restored and verified {len(data):,} bytes.")
+          PY
+      - name: Commit the restored presentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf source-notes/
+          if ! git diff --cached --quiet; then
+            git commit -m "Restore original presentation PDF and remove upload chunks"
+            git push
+          fi
