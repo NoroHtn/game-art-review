@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-motion-shark-v1');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260922-environment-route-v2');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {
