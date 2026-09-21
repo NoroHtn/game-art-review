@@ -6,7 +6,7 @@
   toggle.type='button';toggle.className='study-toggle';toggle.textContent='B&W';
   toggle.setAttribute('aria-label','Grayscale study mode');
   toggle.title='Toggle color and grayscale';head.insertBefore(toggle,head.querySelector('#help'));
-  head.querySelector('.brand').textContent='MOO-NAPPED!';
+  head.querySelector('.brand').textContent='Crash Game';
   function set(mode,persist=true){
     const gray=mode==='grayscale';game.classList.toggle('is-grayscale',gray);
     toggle.setAttribute('aria-pressed',String(gray));

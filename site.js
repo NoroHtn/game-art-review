@@ -16,23 +16,23 @@
   const href = key => instant ? '/game-art-review/instant/?section=' + key : '/game-art-review/' + key + '/';
   const icons = ['document','compass','users','mountain','image','grid','play','gear','cube'];
   const icon = (name) => '<img class="nav-icon" src="/game-art-review/assets/ui/' + name + '.svg" alt="" aria-hidden="true">';
-  document.title = (instant ? 'Pirate Sea Hop' : 'MOO-NAPPED!') + ' · ' + title + ' | Game Art Review';
+  document.title = (instant ? 'Pirate Sea Hop' : 'Crash Game') + ' · ' + title + ' | Game Art Review';
   document.querySelector('#app').innerHTML =
     '<a class="skip-link" href="#content">Skip to content</a><div class="shell" id="page-flow">' +
     '<aside class="sidebar" id="nav"><a class="workspace-brand" id="nav-brand" href="/game-art-review/"><img src="/game-art-review/assets/ui/orbit.png" alt="" width="42" height="24"><span>Game Art Review<small>Art Lead · test assignment</small></span></a>' +
     '<nav class="game-switch" aria-label="Choose game"><a href="/game-art-review/" ' + (!instant ? 'aria-current="true"' : '') + '>01 · Crash</a><a href="/game-art-review/instant/" ' + (instant ? 'aria-current="true"' : '') + '>02 · Instant</a></nav>' +
-    '<div class="project-caption">' + (instant ? 'PIRATE SEA HOP · INSTANT' : 'MOO-NAPPED! · CRASH') + '</div>' +
+    '<div class="project-caption">' + (instant ? 'PIRATE SEA HOP · INSTANT' : 'CRASH GAME') + '</div>' +
     '<nav class="chapter-nav" aria-label="Review sections">' + sections.map((s,i) => '<a id="nav-item-' + s[0] + '" href="' + href(s[0]) + '" ' + (active === s[0] || s[0] === 'final-ui' && ['desktop','mobile'].includes(active) ? 'aria-current="page"' : '') + '><span class="navnum">' + String(i+1).padStart(2,'0') + '</span>' + icon(icons[i]) + '<span>' + s[1] + '</span></a>').join('') + '</nav>' +
     (!instant ? '<div class="nav-resources"><p>INSPECT DIRECTLY</p><nav aria-label="Review resources"><a href="/game-art-review/desktop/">Desktop demo ↗</a><a href="/game-art-review/mobile/">Mobile demo ↗</a><a href="/game-art-review/components/">All assets & objects ↗</a><a href="/game-art-review/specification/">Interaction specification ↗</a></nav></div>' : '<div class="nav-resources"><p>PROJECT STATUS</p><nav aria-label="Instant resources"><a href="/game-art-review/instant/?section=final-ui">Desktop & mobile screens ↗</a><a href="/game-art-review/instant/?section=deliverables">Assets & deliverables ↗</a></nav></div>') +
     '<a class="assignment-link" href="'+(instant?'/game-art-review/assets/instant/assignment-brief.pdf':'/game-art-review/assets/assignment-brief.pdf')+'" target="_blank" rel="noopener">Original assignment PDF ↗</a></aside>' +
     '<main><header class="topline"><span>Game Art Review <span class="crumb-divider">/</span> ' + (instant ? 'Instant' : 'Crash') + ' <span class="crumb-divider">/</span> ' + title + '</span><span class="pill">' + (instant ? 'Final artwork · desktop & mobile' : 'Interactive art prototype') + '</span></header><section id="content" tabindex="-1"></section>' +
-    '<footer class="page-footer"><span>Game Art Review · ' + (instant ? 'Pirate Sea Hop' : 'MOO-NAPPED!') + '</span><a href="#content">Back to top ↑</a></footer></main></div>';
+    '<footer class="page-footer"><span>Game Art Review · ' + (instant ? 'Pirate Sea Hop' : 'Crash Game') + '</span><a href="#content">Back to top ↑</a></footer></main></div>';
   const content = document.querySelector('#content');
   const heading = (k,t,d) => '<header class="page-heading"><p class="art-kicker">' + k + '</p><h1>' + t + '</h1><p class="intro">' + d + '</p></header>';
   const status = s => '<span class="status ' + (s === 'Pending' ? 'pending' : '') + '">' + s + '</span>';
   const displayControls = '<div class="segmented" role="group" aria-label="Game display mode"><button data-display="color" aria-pressed="true">Color</button><button data-display="grayscale" aria-pressed="false">Grayscale</button></div>';
   function artDirection() {
-    content.innerHTML = heading('02 / ART DIRECTION', 'Ink, character & a little chaos.', 'Six supplied references. One consistent visual language for MOO-NAPPED!') +
+    content.innerHTML = heading('02 / ART DIRECTION', 'Ink, character & a little chaos.', 'Six supplied references. One consistent visual language for the crash game.') +
       '<div class="board-jumps"><a href="#reference-board">References</a><a href="#principles">Visual principles</a><a href="#palette">Game palette</a><a href="#typography">Typography</a></div>' +
       '<section id="reference-board"><div class="section-heading"><div><h2>The reference board</h2><p class="caption">Full compositions, consistent framing, no cropped signatures.</p></div><div class="segmented" role="group" aria-label="Reference treatment"><button data-treatment="harmonized" aria-pressed="true">Harmonized</button><button data-treatment="original" aria-pressed="false">Originals</button></div></div>' +
       '<div class="reference-grid harmonized">' + references.map((r,i) => '<figure class="reference-card"><a class="reference-art" href="/game-art-review/assets/references/' + r.file + '" target="_blank" rel="noopener" aria-label="Open original: ' + r.title + '"><img src="/game-art-review/assets/references/' + r.file + '" alt="' + r.alt + '" loading="' + (i < 2 ? 'eager' : 'lazy') + '"></a><figcaption><span class="ref-index">REFERENCE ' + String(i+1).padStart(2,'0') + '</span><h3>' + r.title + '</h3><p>' + r.note + '</p><a href="/game-art-review/assets/references/' + r.file + '" target="_blank" rel="noopener">Original · ' + r.source + ' ↗</a></figcaption></figure>').join('') + '</div><p class="board-note" id="treatment-note" aria-live="polite">Harmonized view: a reversible monochrome/soft-contrast display treatment. Original files and visible signatures are unchanged. References are not original project artwork; authorship is not asserted.</p></section>' +
@@ -123,7 +123,7 @@
   else if(active === 'components')inventory();
   else {
     try {
-      const response = await fetch('/game-art-review/' + active + '-content.html');
+      const response = await fetch('/game-art-review/' + active + '-content.html?v=20260922-crash-label-cleanup');
       if(!response.ok)throw new Error('Page unavailable');
       content.innerHTML = await response.text();
       const kicker = content.querySelector('.art-kicker');

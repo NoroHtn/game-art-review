@@ -9,7 +9,7 @@ The earlier design-review.md records v7, not this implementation.
 ## Changes
 
 - Neutral white/graphite shell, restrained blue selection, self-hosted Nunito Sans.
-- Working title MOO-NAPPED!; company name removed from page branding, site title and URL label.
+- Neutral Crash Game labels across page branding and browser titles.
 - Visible ten-section navigation and direct desktop, mobile, inventory and specification links.
 - Seven assignment requirements mapped to evidence. Labels mean availability, never a self-awarded evaluation score.
 - Separate Instant route with the same structure and nine asset-pending categories. No Crash art or mechanics are claimed as Instant work. No upload backend.
