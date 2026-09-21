@@ -1,0 +1,81 @@
+name: Deploy Game Art Review
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check whether the complete export has been imported
+        id: check
+        run: |
+          if [ -f index.html ] && [ -f assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf ] && [ -f EXPORT-INFO.json ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Waiting for the approved website ZIP. Upload it to the prepared import release and publish that release.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Validate JavaScript
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          find . -path './.git' -prune -o -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+      - name: Stage the static website
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          python3 - <<'PY'
+          import os, shutil
+          from pathlib import Path
+          source = Path.cwd()
+          target = Path(os.environ['RUNNER_TEMP']) / 'pages'
+          target.mkdir(parents=True, exist_ok=True)
+          for item in source.iterdir():
+              if item.name in {'.git', '.github'}:
+                  continue
+              if item.is_symlink():
+                  raise SystemExit('Symbolic links are not allowed in the Pages artifact: ' + item.name)
+              if item.is_dir():
+                  shutil.copytree(item, target / item.name, dirs_exist_ok=True)
+              else:
+                  shutil.copy2(item, target / item.name)
+          (target / '.nojekyll').touch()
+          print('Staged', sum(1 for p in target.rglob('*') if p.is_file()), 'static files.')
+          PY
+      - name: Upload Pages artifact
+        if: steps.check.outputs.ready == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/pages
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check Pages configuration
+        uses: actions/configure-pages@v5
+      - name: Deploy approved website
+        id: deployment
+        uses: actions/deploy-pages@v4
