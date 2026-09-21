@@ -11,3 +11,14 @@
 .pirate-review .pirate-figure.instant-environment-hero{width:100%;max-width:420px;margin:0 auto 36px;box-sizing:border-box}
 .pirate-review .instant-environment-hero a{display:block}
 .pirate-review .instant-environment-hero img{display:block;width:100%;height:auto;max-height:none;object-fit:contain;padding:0}
+
+/* Instant Deliverables: reuse the Crash presentation layout without changing other sections. */
+.pirate-review .instant-deliverables #figma{margin-bottom:0}
+.pirate-review .instant-deliverables .delivery-links{margin-block:0}
+.pirate-review .instant-deliverables .delivery-links a{min-height:0}
+.pirate-review .instant-deliverables .delivery-links span{font-size:12px}
+.pirate-review .instant-deliverables .submission-grid{align-items:stretch}
+.pirate-review .instant-deliverables #copy-status:empty{display:none}
+.pirate-review .instant-deliverables #figma-url:not([hidden]){margin-top:16px;padding:10px;border:1px solid var(--border);border-radius:6px;font:inherit;min-width:0}
+.pirate-review .instant-deliverables .submission-card{min-width:0}
+.pirate-review .instant-deliverables .submission-card .preview-actions{flex-wrap:wrap}
