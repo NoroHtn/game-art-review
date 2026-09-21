@@ -39,7 +39,7 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         run: |
           python3 - <<'PY'
-          import os, shutil
+          import os, shutil, json, hashlib
           from pathlib import Path
           source = Path.cwd()
           target = Path(os.environ['RUNNER_TEMP']) / 'pages'
@@ -53,6 +53,16 @@ jobs:
                   shutil.copytree(item, target / item.name, dirs_exist_ok=True)
               else:
                   shutil.copy2(item, target / item.name)
+          # Reassemble byte-identical downloads split only for upload transport.
+          manifest = source / 'source-notes/instant-downloads.json'
+          if manifest.exists():
+              for entry in json.loads(manifest.read_text()):
+                  data = b''.join((source / part).read_bytes() for part in entry['parts'])
+                  if len(data) != entry['size'] or hashlib.sha256(data).hexdigest() != entry['sha256']:
+                      raise SystemExit('Download checksum mismatch: ' + entry['path'])
+                  (target / entry['path']).write_bytes(data)
+                  for part in entry['parts']:
+                      (target / part).unlink()
           (target / '.nojekyll').touch()
           print('Staged', sum(1 for p in target.rglob('*') if p.is_file()), 'static files.')
           PY

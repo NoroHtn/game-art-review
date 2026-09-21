@@ -23,9 +23,9 @@
     '<nav class="game-switch" aria-label="Choose game"><a href="/game-art-review/" ' + (!instant ? 'aria-current="true"' : '') + '>01 · Crash</a><a href="/game-art-review/instant/" ' + (instant ? 'aria-current="true"' : '') + '>02 · Instant</a></nav>' +
     '<div class="project-caption">' + (instant ? 'PIRATE SEA HOP · INSTANT' : 'MOO-NAPPED! · CRASH') + '</div>' +
     '<nav class="chapter-nav" aria-label="Review sections">' + sections.map((s,i) => '<a id="nav-item-' + s[0] + '" href="' + href(s[0]) + '" ' + (active === s[0] || s[0] === 'final-ui' && ['desktop','mobile'].includes(active) ? 'aria-current="page"' : '') + '><span class="navnum">' + String(i+1).padStart(2,'0') + '</span>' + icon(icons[i]) + '<span>' + s[1] + '</span></a>').join('') + '</nav>' +
-    (!instant ? '<div class="nav-resources"><p>INSPECT DIRECTLY</p><nav aria-label="Review resources"><a href="/game-art-review/desktop/">Desktop demo ↗</a><a href="/game-art-review/mobile/">Mobile demo ↗</a><a href="/game-art-review/components/">All assets & objects ↗</a><a href="/game-art-review/specification/">Interaction specification ↗</a></nav></div>' : '<div class="nav-resources"><p>PROJECT STATUS</p><nav aria-label="Instant resources"><a href="/game-art-review/instant/play/" target="_blank" rel="noopener">Open gameplay study ↗</a><a href="/game-art-review/instant/?section=deliverables">Assets & deliverables ↗</a></nav></div>') +
+    (!instant ? '<div class="nav-resources"><p>INSPECT DIRECTLY</p><nav aria-label="Review resources"><a href="/game-art-review/desktop/">Desktop demo ↗</a><a href="/game-art-review/mobile/">Mobile demo ↗</a><a href="/game-art-review/components/">All assets & objects ↗</a><a href="/game-art-review/specification/">Interaction specification ↗</a></nav></div>' : '<div class="nav-resources"><p>PROJECT STATUS</p><nav aria-label="Instant resources"><a href="/game-art-review/instant/?section=final-ui">Desktop & mobile screens ↗</a><a href="/game-art-review/instant/?section=deliverables">Assets & deliverables ↗</a></nav></div>') +
     '<a class="assignment-link" href="'+(instant?'/game-art-review/assets/instant/assignment-brief.pdf':'/game-art-review/assets/assignment-brief.pdf')+'" target="_blank" rel="noopener">Original assignment PDF ↗</a></aside>' +
-    '<main><header class="topline"><span>Game Art Review <span class="crumb-divider">/</span> ' + (instant ? 'Instant' : 'Crash') + ' <span class="crumb-divider">/</span> ' + title + '</span><span class="pill">' + (instant ? 'Visual study · character under review' : 'Interactive art prototype') + '</span></header><section id="content" tabindex="-1"></section>' +
+    '<main><header class="topline"><span>Game Art Review <span class="crumb-divider">/</span> ' + (instant ? 'Instant' : 'Crash') + ' <span class="crumb-divider">/</span> ' + title + '</span><span class="pill">' + (instant ? 'Final artwork · desktop & mobile' : 'Interactive art prototype') + '</span></header><section id="content" tabindex="-1"></section>' +
     '<footer class="page-footer"><span>Game Art Review · ' + (instant ? 'Pirate Sea Hop' : 'MOO-NAPPED!') + '</span><a href="#content">Back to top ↑</a></footer></main></div>';
   const content = document.querySelector('#content');
   const heading = (k,t,d) => '<header class="page-heading"><p class="art-kicker">' + k + '</p><h1>' + t + '</h1><p class="intro">' + d + '</p></header>';
@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-final');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {

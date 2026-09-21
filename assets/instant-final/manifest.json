@@ -1,0 +1,205 @@
+{
+  "states": [
+    "Ready to bet",
+    "First jump",
+    "First safe landing",
+    "Route advances",
+    "Barrel landing",
+    "Next jump",
+    "Tentacle encounter",
+    "Shark encounter",
+    "Mermaid encounter",
+    "Cashout result"
+  ],
+  "assets": [
+    {
+      "file": "E9140BA5-8EFD-4168-9D73-AA6F153006CD.webp",
+      "title": "Shark fin",
+      "category": "environment",
+      "source": "E9140BA5-8EFD-4168-9D73-AA6F153006CD.PNG"
+    },
+    {
+      "file": "IMG_4879.webp",
+      "title": "Character turnaround",
+      "category": "character",
+      "source": "IMG_4879.PNG"
+    },
+    {
+      "file": "A11CDB16-D724-43C1-88CA-EC587CB058C3.webp",
+      "title": "Floating barrel",
+      "category": "environment",
+      "source": "A11CDB16-D724-43C1-88CA-EC587CB058C3.PNG"
+    },
+    {
+      "file": "3236F1F2-7BF0-4BC5-9E1B-6EC48E0CAAB2.webp",
+      "title": "Treasure island",
+      "category": "environment",
+      "source": "3236F1F2-7BF0-4BC5-9E1B-6EC48E0CAAB2.PNG"
+    },
+    {
+      "file": "00B9F06C-2FA2-4663-BF4D-8BCE249D83CC.webp",
+      "title": "Broken railing",
+      "category": "environment",
+      "source": "00B9F06C-2FA2-4663-BF4D-8BCE249D83CC.PNG"
+    },
+    {
+      "file": "4E9A539F-8C87-4833-8AD0-751FFB96225C.webp",
+      "title": "Floating crate",
+      "category": "environment",
+      "source": "4E9A539F-8C87-4833-8AD0-751FFB96225C.PNG"
+    },
+    {
+      "file": "IMG_4835.webp",
+      "title": "Turquoise water",
+      "category": "environment",
+      "source": "IMG_4835.PNG"
+    },
+    {
+      "file": "IMG_4809.webp",
+      "title": "Standing rear pose",
+      "category": "character",
+      "source": "IMG_4809.PNG"
+    },
+    {
+      "file": "9E1C401B-9D30-43E1-BC18-7CA63C973A00.webp",
+      "title": "Jump with map",
+      "category": "character",
+      "source": "9E1C401B-9D30-43E1-BC18-7CA63C973A00.PNG"
+    },
+    {
+      "file": "26D24F74-3FA2-4ADF-B2E8-820291B58905.webp",
+      "title": "Starting ship deck",
+      "category": "environment",
+      "source": "26D24F74-3FA2-4ADF-B2E8-820291B58905.PNG"
+    },
+    {
+      "file": "F982C7ED-7785-4E4F-85E4-7C7DF54AD07F.webp",
+      "title": "Tentacle S curve",
+      "category": "hazard",
+      "source": "F982C7ED-7785-4E4F-85E4-7C7DF54AD07F.PNG"
+    },
+    {
+      "file": "IMG_4803.webp",
+      "title": "Airborne pose",
+      "category": "character",
+      "source": "IMG_4803.PNG"
+    },
+    {
+      "file": "31B82210-5A62-4A03-A244-294259571A50.webp",
+      "title": "Tentacle loop",
+      "category": "hazard",
+      "source": "31B82210-5A62-4A03-A244-294259571A50.PNG"
+    },
+    {
+      "file": "419855C5-4950-46AC-8252-38AEF175F3D4.webp",
+      "title": "Tentacle raised",
+      "category": "hazard",
+      "source": "419855C5-4950-46AC-8252-38AEF175F3D4.PNG"
+    },
+    {
+      "file": "17FC7B14-020B-4501-AC7E-A98463E068A9.webp",
+      "title": "Mermaid encounter pose",
+      "category": "character",
+      "source": "17FC7B14-020B-4501-AC7E-A98463E068A9.PNG"
+    },
+    {
+      "file": "C0C2D649-E8BC-4132-990B-FC21A17CF341.webp",
+      "title": "Broken hull",
+      "category": "environment",
+      "source": "C0C2D649-E8BC-4132-990B-FC21A17CF341.PNG"
+    },
+    {
+      "file": "8CAD8D7F-C7F5-440F-BF79-7601DB8E6408.webp",
+      "title": "Map reading pose",
+      "category": "character",
+      "source": "8CAD8D7F-C7F5-440F-BF79-7601DB8E6408.PNG"
+    },
+    {
+      "file": "8DE0DFBE-D82A-4782-AB74-D2524A0C4BA6.webp",
+      "title": "Mermaid tail",
+      "category": "hazard",
+      "source": "8DE0DFBE-D82A-4782-AB74-D2524A0C4BA6.PNG"
+    },
+    {
+      "file": "DF70CFF3-41E1-436F-A3B7-CD210B5A7C4E.webp",
+      "title": "Shark encounter pose",
+      "category": "character",
+      "source": "DF70CFF3-41E1-436F-A3B7-CD210B5A7C4E.PNG"
+    },
+    {
+      "file": "147D2AFB-BF31-4A14-AD0F-0801D6D955FF.webp",
+      "title": "Tentacle low curl",
+      "category": "hazard",
+      "source": "147D2AFB-BF31-4A14-AD0F-0801D6D955FF.PNG"
+    },
+    {
+      "file": "CE197414-8A5B-42D4-A98F-9E93EC5D6343.webp",
+      "title": "Broken cross mast",
+      "category": "environment",
+      "source": "CE197414-8A5B-42D4-A98F-9E93EC5D6343.PNG"
+    }
+  ],
+  "references": [
+    {
+      "file": "ref-01.jpg",
+      "source": "IMG_4788.JPG"
+    },
+    {
+      "file": "ref-02.jpg",
+      "source": "IMG_4798.JPG"
+    },
+    {
+      "file": "ref-03.jpg",
+      "source": "IMG_4799.JPG"
+    },
+    {
+      "file": "ref-04.jpg",
+      "source": "IMG_4794.JPG"
+    },
+    {
+      "file": "ref-05.jpg",
+      "source": "IMG_4795.JPG"
+    },
+    {
+      "file": "ref-06.jpg",
+      "source": "IMG_4797.JPG"
+    },
+    {
+      "file": "ref-07.jpg",
+      "source": "IMG_4796.JPG"
+    },
+    {
+      "file": "ref-08.jpg",
+      "source": "IMG_4789.jpg"
+    },
+    {
+      "file": "ref-09.jpg",
+      "source": "IMG_4792.JPG"
+    },
+    {
+      "file": "ref-10.jpg",
+      "source": "IMG_4793.JPG"
+    },
+    {
+      "file": "ref-11.jpg",
+      "source": "IMG_4787.JPG"
+    },
+    {
+      "file": "ref-12.jpg",
+      "source": "IMG_4801.JPG"
+    },
+    {
+      "file": "ref-13.jpg",
+      "source": "IMG_4791.JPG"
+    },
+    {
+      "file": "ref-14.jpg",
+      "source": "IMG_4790.JPG"
+    },
+    {
+      "file": "ref-15.jpg",
+      "source": "IMG_4800.JPG"
+    }
+  ],
+  "figma": "https://www.figma.com/design/L7QrdpDcaaWx9GkEgHsWWj/Norair-Harutyunyan-Test-Task---INSTANT-GAME--?node-id=8-10993&p=f&t=Iio8oZWtIOWxkWzD-0"
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "path": "assets/instant-final/downloads/Instant_Game_Assets.zip",
+    "size": 36224402,
+    "sha256": "652c53effa9de929d8b8fcae9abd2987310d275c0da595e0b62e924e50e04284",
+    "parts": [
+      "assets/instant-final/downloads/Instant_Game_Assets.zip.part01",
+      "assets/instant-final/downloads/Instant_Game_Assets.zip.part02",
+      "assets/instant-final/downloads/Instant_Game_Assets.zip.part03",
+      "assets/instant-final/downloads/Instant_Game_Assets.zip.part04"
+    ]
+  },
+  {
+    "path": "assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf",
+    "size": 14408193,
+    "sha256": "f789ebafa8266d04230aad2759fa90785788b6f3485ced2f26b867983583faec",
+    "parts": [
+      "assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf.part01",
+      "assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf.part02"
+    ]
+  }
+]
