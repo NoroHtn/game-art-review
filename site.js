@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260922-environment-route-v2');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260922-motion-tentacles-v1');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {
