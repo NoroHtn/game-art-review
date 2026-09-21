@@ -1,0 +1,95 @@
+name: Add Instant Motion shark fin
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/add-instant-motion-shark.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: instant-motion-shark-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Add the original image and update only the Motion gallery
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          asset = Path('assets/instant-final/art/shark-fin-motion.png')
+          expected = 'ff3f5edba91d968ea7a4147cda7ebaaf707761252cf703425cfce080c7049074'
+          url = 'https://pikaso.cdnpk.net/private/production/5512638156/3622148604.png?token=exp=1790294400~hmac=fb40e5cde993155ac16498b56b3ed4028756601749b64d46d2d9a12368be56fe'
+          if not asset.exists() or hashlib.sha256(asset.read_bytes()).hexdigest() != expected:
+              with urllib.request.urlopen(url, timeout=90) as response:
+                  data = response.read()
+              if hashlib.sha256(data).hexdigest() != expected:
+                  raise SystemExit('Uploaded shark-fin PNG checksum mismatch; nothing changed.')
+              asset.parent.mkdir(parents=True, exist_ok=True)
+              asset.write_bytes(data)
+
+          module = Path('instant-review.js')
+          text = module.read_text()
+          helper = " const motionGallery=()=>`<div class=\"instant-asset-grid\">${m.assets.filter(a=>a.category==='hazard').map(a=>fig('art/'+a.file,a.title)).join('')}${fig('art/shark-fin-motion.png','Shark fin')}</div>`;\n"
+          if 'const motionGallery=' not in text:
+              anchor = ' const pages={'
+              if text.count(anchor) != 1:
+                  raise SystemExit('Unexpected Instant page structure; refusing to overwrite.')
+              text = text.replace(anchor, helper + anchor, 1)
+              lines = text.splitlines(keepends=True)
+              matches = [i for i, line in enumerate(lines) if line.lstrip().startswith('animation:')]
+              if len(matches) != 1 or lines[matches[0]].count("+gallery('hazard')+") != 1:
+                  raise SystemExit('Unexpected Motion gallery structure; refusing to overwrite.')
+              i = matches[0]
+              lines[i] = lines[i].replace("+gallery('hazard')+", '+motionGallery()+', 1)
+              text = ''.join(lines)
+              module.write_text(text)
+          if "${fig('art/shark-fin-motion.png','Shark fin')}" not in text or '+motionGallery()+' not in text:
+              raise SystemExit('Motion image insertion was not verified.')
+
+          version = '20260921-motion-shark-v1'
+          for filename, name in [('site.js', 'instant-review.js'), ('instant/index.html', 'site.js')]:
+              p = Path(filename)
+              original = p.read_text()
+              pattern = re.escape('/game-art-review/' + name) + r'(?:\?v=[^\x27\x22\s<>]*)?'
+              updated, count = re.subn(pattern, '/game-art-review/' + name + '?v=' + version, original)
+              if count != 1:
+                  raise SystemExit('Unexpected asset import count in ' + filename)
+              p.write_text(updated)
+          print('Original PNG verified. Added Shark fin after the existing Motion assets. Other galleries and content are unchanged.')
+          PY
+      - name: Validate JavaScript
+        run: |
+          node --check instant-review.js
+          node --check site.js
+      - name: Commit the Motion image addition
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/instant-final/art/shark-fin-motion.png instant-review.js site.js instant/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add original shark-fin image to Instant Motion gallery without changing existing assets'
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then break; fi
+              if [ "$attempt" -eq 3 ]; then exit 1; fi
+              git pull --rebase origin main
+            done
+          fi
+      - name: Publish through the existing GitHub Pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
