@@ -1,0 +1,129 @@
+name: Update approved Instant moodboard
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-instant-moodboard.yml']
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: instant-moodboard-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Apply only the approved reference changes
+        env:
+          IMAGE_URL: 'https://pikaso.cdnpk.net/private/production/5512487858/3622077046.jpg?token=exp=1790294400~hmac=7cef4ac2e6273732da902c501c1ee5ac4678b91049901419761649aad3e842d0'
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, urllib.request
+          from pathlib import Path
+          root = Path('assets/instant-final')
+          path = root / 'manifest.json'
+          manifest = json.loads(path.read_text())
+          original = {r['source']: r for r in manifest['references']}
+          order = ['IMG_4788.JPG', 'IMG_4798.JPG', 'IMG_4797.JPG', 'IMG_4789.jpg', 'IMG_4791.JPG', 'IMG_4790.JPG', 'IMG_4794.JPG', 'IMG_4801.JPG']
+          assert all(s in original for s in order), 'A selected reference is missing; no changes applied.'
+          refs = [original[s] for s in order]
+          for ref in refs:
+              assert (root / 'references' / ref['file']).is_file(), ref['file']
+          target = root / 'references/ref-09-barrel.jpg'
+          checksum = '08448b1bc9738f6d61dab58d51bb376ee16d04ab9a1ee73e56bf76bd394d344b'
+          if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() == checksum:
+              image = target.read_bytes()
+          else:
+              request = urllib.request.Request(os.environ['IMAGE_URL'], headers={'User-Agent': 'Game-Art-Review-Asset-Import'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  image = response.read()
+          assert hashlib.sha256(image).hexdigest() == checksum, 'Uploaded reference checksum mismatch.'
+          assert image.startswith(b'\xff\xd8'), 'The uploaded file is not a JPEG.'
+          replacements = {
+              'instant-review.js': [
+                  ('All 15 supplied references, preserved in ZIP order. Reference authorship is not claimed.', '${m.references.length} selected references in the approved order. Reference authorship is not claimed.'),
+                  ("fetch(A+'manifest.json')", "fetch(A+'manifest.json?v=20260921-refs9')")
+              ],
+              'site.js': [('/game-art-review/instant-review.js?v=20260921-final', '/game-art-review/instant-review.js?v=20260921-refs9')],
+              'instant/index.html': [('/game-art-review/site.js?v=20260921-final', '/game-art-review/site.js?v=20260921-refs9')]
+          }
+          updates = {}
+          for name, pairs in replacements.items():
+              text = Path(name).read_text()
+              for old, new in pairs:
+                  if new in text and old not in text:
+                      continue
+                  assert text.count(old) == 1, f'Unexpected source content in {name}; stopping safely.'
+                  text = text.replace(old, new, 1)
+              updates[name] = text
+          refs.append({'file': 'ref-09-barrel.jpg', 'source': 'IMG_4792(2).jpeg'})
+          manifest['references'] = refs
+          assert len(refs) == 9
+          target.write_bytes(image)
+          path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+          for name, text in updates.items():
+              Path(name).write_text(text)
+          print('Approved order:', ', '.join(r['source'] for r in refs))
+          print('New barrel imported byte-for-byte:', checksum)
+          PY
+      - name: Validate the changed JavaScript and commit
+        run: |
+          node --check instant-review.js
+          node --check site.js
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/instant-final/manifest.json assets/instant-final/references/ref-09-barrel.jpg instant-review.js site.js instant/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Set Instant moodboard to nine approved references in requested order'
+            git push origin HEAD:main
+          fi
+          echo "UPDATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Publish the updated website
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run deploy-pages.yml --ref main
+          for i in $(seq 1 30); do
+            RUN_ID=$(gh run list --workflow deploy-pages.yml --commit "$UPDATED_SHA" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$RUN_ID" ]; then break; fi
+            sleep 5
+          done
+          test -n "$RUN_ID"
+          gh run watch "$RUN_ID" --exit-status --interval 10
+      - name: Verify the live references and exact uploaded barrel
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, time, urllib.request
+          base = 'https://norohtn.github.io/game-art-review/'
+          expected = ['IMG_4788.JPG', 'IMG_4798.JPG', 'IMG_4797.JPG', 'IMG_4789.jpg', 'IMG_4791.JPG', 'IMG_4790.JPG', 'IMG_4794.JPG', 'IMG_4801.JPG', 'IMG_4792(2).jpeg']
+          def get(path):
+              sep = '&' if '?' in path else '?'
+              req = urllib.request.Request(base + path + sep + 'verify=' + str(time.time_ns()), headers={'Cache-Control': 'no-cache'})
+              with urllib.request.urlopen(req, timeout=45) as response:
+                  return response.read()
+          for attempt in range(12):
+              try:
+                  manifest = json.loads(get('assets/instant-final/manifest.json'))
+                  assert [r['source'] for r in manifest['references']] == expected
+                  for ref in manifest['references']:
+                      data = get('assets/instant-final/references/' + ref['file'])
+                      assert len(data) > 100
+                  barrel = get('assets/instant-final/references/ref-09-barrel.jpg')
+                  assert hashlib.sha256(barrel).hexdigest() == '08448b1bc9738f6d61dab58d51bb376ee16d04ab9a1ee73e56bf76bd394d344b'
+                  renderer = get('instant-review.js?v=20260921-refs9').decode()
+                  assert '${m.references.length} selected references in the approved order.' in renderer
+                  assert 'All 15 supplied references, preserved in ZIP order.' not in renderer
+                  html = get('instant/?section=art-direction').decode()
+                  assert '/game-art-review/site.js?v=20260921-refs9' in html
+                  print('LIVE VERIFIED: 9 references, correct order, every image reachable, original uploaded JPEG unchanged.')
+                  break
+              except Exception:
+                  if attempt == 11:
+                      raise
+                  time.sleep(10)
+          PY
