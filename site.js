@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-boards4');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260921-environment-v1');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {
