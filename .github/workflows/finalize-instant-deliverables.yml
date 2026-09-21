@@ -1,0 +1,178 @@
+name: Finalize Instant deliverables
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - source-notes/finalize-instant-deliverables.py
+      - .github/workflows/finalize-instant-deliverables.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: finalize-instant-deliverables
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF and verification dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-urw-base35
+          python -m pip install 'Pillow==12.3.0' 'reportlab==4.4.9' 'PyMuPDF==1.26.7' 'fonttools==4.63.0' requests playwright
+      - name: Build Instant PDF and update only the Instant submission chapter
+        run: |
+          sha256sum assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf > "$RUNNER_TEMP/crash-before.sha256"
+          python source-notes/finalize-instant-deliverables.py --audit source-notes/instant-deliverables-audit.json
+          node --check instant-review.js
+          node --check instant-deliverables.js
+          sha256sum -c "$RUNNER_TEMP/crash-before.sha256"
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          allowed = {
+              'assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf',
+              'instant-review.js', 'instant/index.html',
+              'instant-deliverables.js', 'instant-deliverables.css',
+              'source-notes/instant-downloads.json',
+              'source-notes/instant-deliverables-audit.json'
+          }
+          modified = set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          untracked = set(subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines())
+          assert (modified | untracked) <= allowed, (modified | untracked) - allowed
+          audit=json.loads(Path('source-notes/instant-deliverables-audit.json').read_text())
+          assert audit['pages']==25 and audit['screen_count']==20
+          assert audit['character_boards']==4 and audit['approved_references']==9
+          print('PASS: 25 pages, 20 final screens, 4 approved character boards, 9 approved references; Crash unchanged.')
+          PY
+      - name: Commit the verified Instant package
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf instant-review.js instant/index.html instant-deliverables.js instant-deliverables.css source-notes/instant-downloads.json source-notes/instant-deliverables-audit.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Match Instant Deliverables to Crash and publish complete 25-page presentation'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Deploy the updated website
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-pages.yml',
+              ref: 'main'
+            });
+      - name: Verify the published website and exact new PDF
+        env:
+          VERIFY_RUN: ${{ github.run_id }}
+        run: |
+          python - <<'PY'
+          import os,time,json,hashlib
+          from pathlib import Path
+          import requests,fitz
+          base='https://norohtn.github.io/game-art-review/'
+          expected=json.loads(Path('source-notes/instant-deliverables-audit.json').read_text())
+          version=os.environ['VERIFY_RUN']
+          def get(path):
+              r=requests.get(base+path,timeout=45,headers={'Cache-Control':'no-cache'})
+              r.raise_for_status()
+              return r
+          for attempt in range(45):
+              try:
+                  html=get('instant/?section=deliverables&verify='+version).text
+                  assert 'instant-deliverables.css?v=20260922-matched-25' in html
+                  module=get('instant-deliverables.js?v=20260922-matched-25').text
+                  assert '25-page presentation' in module and 'Open PDF' in module and 'Download PDF' in module
+                  pdf=get('assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf?v=20260922-matched-25').content
+                  assert hashlib.sha256(pdf).hexdigest()==expected['sha256']
+                  doc=fitz.open(stream=pdf,filetype='pdf')
+                  assert len(doc)==25
+                  assert any('L7QrdpDcaaWx9GkEgHsWWj' in link.get('uri','') for link in doc[-1].get_links())
+                  crash=get('assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf?verify='+version).content
+                  before=Path(os.environ['RUNNER_TEMP'],'crash-before.sha256').read_text().split()[0]
+                  assert hashlib.sha256(crash).hexdigest()==before
+                  for file in ['Instant_Mobile.pdf','Instant_Web.pdf','Assignment_Brief.pdf','Instant_References.zip']:
+                      get('assets/instant-final/downloads/'+file)
+                  print('LIVE PASS: current Instant page, matching module, exact 25-page PDF, original exports and unchanged Crash PDF.',flush=True)
+                  break
+              except Exception as error:
+                  print('Waiting for updated Pages deployment',attempt+1,type(error).__name__,str(error),flush=True)
+                  time.sleep(8)
+          else:
+              raise SystemExit('New Pages content was not verified before timeout.')
+          PY
+      - name: Browser-check desktop, mobile and controls
+        run: |
+          python - <<'PY'
+          import shutil,subprocess,json
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          executable=shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+          if not executable:
+              subprocess.run(['python','-m','playwright','install','--with-deps','chromium'],check=True)
+          target='https://norohtn.github.io/game-art-review/instant/?section=deliverables'
+          out=Path('verification');out.mkdir(exist_ok=True)
+          with sync_playwright() as p:
+              browser=p.chromium.launch(headless=True,executable_path=executable,args=['--no-sandbox'])
+              context=browser.new_context(viewport={'width':1536,'height':1024},permissions=['clipboard-read','clipboard-write'])
+              page=context.new_page();errors=[]
+              page.on('pageerror',lambda e:errors.append(str(e)))
+              page.goto(target,wait_until='networkidle',timeout=90000)
+              page.locator('.instant-deliverables #pdf').wait_for()
+              cards=page.locator('.instant-deliverables .submission-card')
+              assert cards.count()==2
+              a,b=[cards.nth(i).bounding_box() for i in range(2)]
+              assert abs(a['y']-b['y'])<2 and a['x']<b['x']
+              assert page.locator('#pdf').get_by_text('25-page presentation',exact=False).count()==1
+              figma=page.locator('#figma a').get_attribute('href')
+              assert 'L7QrdpDcaaWx9GkEgHsWWj' in figma
+              page.locator('#copy-figma').click()
+              page.wait_for_timeout(200)
+              assert 'copied' in page.locator('#copy-status').inner_text().lower()
+              with page.expect_popup() as popup:
+                  page.locator('#pdf').get_by_role('link',name='Open PDF',exact=True).click()
+              opened=popup.value
+              opened.wait_for_load_state('domcontentloaded')
+              assert 'Pirate_Sea_Hop_Test_Presentation.pdf' in opened.url
+              opened.close()
+              with page.expect_download(timeout=60000) as result:
+                  page.locator('#pdf').get_by_role('link',name='Download PDF',exact=True).click()
+              download=result.value
+              assert download.suggested_filename=='Instant_Game_Test_Presentation.pdf'
+              download.save_as(out/'Instant_Game_Test_Presentation.pdf')
+              page.screenshot(path=str(out/'instant-desktop.png'),full_page=True)
+              page.set_viewport_size({'width':390,'height':844})
+              page.wait_for_timeout(300)
+              assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
+              a,b=[cards.nth(i).bounding_box() for i in range(2)]
+              assert b['y']>a['y']+a['height']-1
+              page.screenshot(path=str(out/'instant-mobile.png'),full_page=True)
+              assert not errors,errors
+              print('BROWSER PASS: two-column desktop; stacked mobile; Figma link and Copy; Open PDF; Download PDF; no JavaScript errors.')
+              (out/'result.json').write_text(json.dumps({'status':'pass','pages':25,'screens':20,'desktop_cards':2,'mobile_overflow':False,'pdf_open':True,'pdf_download':True,'figma_copy':True,'javascript_errors':errors},indent=2))
+              browser.close()
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: instant-deliverables-verification
+          path: |
+            verification/
+            source-notes/instant-deliverables-audit.json
+            assets/instant-final/downloads/Pirate_Sea_Hop_Test_Presentation.pdf
+          retention-days: 7
