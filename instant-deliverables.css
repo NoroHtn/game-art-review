@@ -1,0 +1,10 @@
+/* Match the Crash chapter without altering other Instant pages. */
+.pirate-review .instant-deliverables #figma{margin-bottom:0}
+.pirate-review .instant-deliverables .delivery-links{margin-block:0}
+.pirate-review .instant-deliverables .delivery-links a{min-height:0}
+.pirate-review .instant-deliverables .delivery-links span{font-size:12px}
+.pirate-review .instant-deliverables #copy-status:empty{display:none}
+.pirate-review .instant-deliverables #figma-url{width:100%;box-sizing:border-box;margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:6px}
+.pirate-review .instant-deliverables .submission-card{min-width:0}
+.pirate-review .instant-deliverables .table-wrap{overflow-x:auto}
+@media(max-width:760px){.pirate-review .instant-deliverables .submission-grid{grid-template-columns:1fr}.pirate-review .instant-deliverables .preview-actions .link-button{max-width:100%;white-space:normal}}
