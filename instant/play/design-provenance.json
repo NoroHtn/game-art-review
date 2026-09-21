@@ -1,0 +1,17 @@
+{
+  "uiBaseline": "12ui desktop ready-state HTML export",
+  "desktopConversion": "4f7b4e4e-c620-4ae8-8e6c-1ef2e3823a66",
+  "mobileConversion": "cc68a412-c252-4e9e-a12c-8c42c20b35bd",
+  "retained": [
+    "exported console hierarchy",
+    "control surfaces and colors",
+    "button hierarchy",
+    "header identity"
+  ],
+  "adapted": [
+    "responsive sizing and touch targets",
+    "semantic input and live values",
+    "separate approved-direction harbor/barrel/temporary hero assets",
+    "states and accessibility"
+  ]
+}

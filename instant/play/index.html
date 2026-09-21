@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pirate Sea Hop — gameplay study</title><link rel="stylesheet" href="./game.css"></head><body>
+<main id="game" class="generated-screen" aria-label="Pirate Sea Hop scripted game preview">
+<div id="world" class="world">
+<img class="harbor" src="/game-art-review/assets/instant/harbor-dock.png" alt="Turquoise harbor with a solid wooden starting pier" draggable="false">
+<header class="game-header"><img class="game-logo" src="/game-art-review/assets/instant/game-logo.png" alt="Pirate Sea Hop"><div class="toolbar">
+<button id="sound" class="round-button" aria-label="Enable sound" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4Z" fill="currentColor" stroke-linejoin="round"/><g id="sound-off"><path d="m16 9 6 6m0-6-6 6"/></g><g id="sound-on" hidden><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></g></svg></button>
+<button id="menu" class="round-button" aria-label="Open game menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button></div></header>
+<div id="current-hud" class="current-hud" hidden><span>CURRENT</span><strong id="current-value">—</strong></div>
+<div id="route" class="route" aria-label="Forward multiplier route"></div>
+<div id="start-marker" class="start-marker">STARTING DOCK</div>
+<div id="hero" class="hero"><span class="hero-shadow"></span><img src="/game-art-review/assets/instant/hero-rear.png" alt="Temporary J1 boar pirate, viewed from behind, with a left hook and right wooden peg" draggable="false"></div>
+<img class="hazard shark" src="/game-art-review/assets/instant/shark.png" alt="" draggable="false"><img class="hazard tentacle" src="/game-art-review/assets/instant/tentacle.png" alt="" draggable="false"><div class="splash" aria-hidden="true"></div>
+<aside id="result" class="result" hidden aria-live="polite"><span id="result-title"></span><strong id="result-value"></strong><p id="result-note"></p></aside>
+</div>
+<section id="viewport-1-winner-controls" class="betting-console" aria-label="Betting controls" data-design-source="viewport-1-winner-controls">
+<div id="viewport-1-winner-controls-source-row-1" class="bet-row" data-design-source="viewport-1-winner-controls-source-row-1">
+<div id="viewport-1-winner-controls-bet" class="bet-field" data-design-source="viewport-1-winner-controls-bet">
+<label id="viewport-1-winner-controls-bet-text" class="text" style="font-family:&#x27;Nunito&#x27;,sans-serif;color:#193d5d;font-weight:900;overflow:visible;white-space:pre;overflow-wrap:normal;" data-design-source="viewport-1-winner-controls-bet-text" for="stake">BET</label>
+<div class="stake-wrap" data-design-source="viewport-1-winner-controls-bet-input"><span aria-hidden="true">$</span><input id="stake" aria-label="Stake in dollars" inputmode="decimal" type="text" value="10.00" maxlength="9" autocomplete="off" aria-describedby="status"><small id="stake-lock">USD</small></div>
+<span id="viewport-1-winner-controls-bet-icon" class="icon" role="img" aria-label="up-down chevron" style="pointer-events:none;display:block;color:#f9d277;" data-design-source="viewport-1-winner-controls-bet-icon" hidden=""></span>
+</div>
+<div id="viewport-1-winner-controls-max" class="fx-col" data-design-source="viewport-1-winner-controls-max">
+<button id="go-max" class="button" type="button" data-12ui-hover-mode="surface-color" style="background:var(--ly-interaction-state-surface,#fff1cd);border:2.048px solid #193d5d;border-radius:10.24px;box-shadow:0 3.072px 0 #bf8a52;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;--ly-interaction-hover-surface:rgb(235,222,189);" data-design-source="viewport-1-winner-controls-max-button" disabled="" title="GO MAX is unavailable in this visual preview; source behavior still needs confirmation." aria-label="GO MAX — unavailable in visual preview"><span style="font-family:&#x27;Nunito&#x27;,sans-serif;color:#193d5d;font-weight:900;white-space:nowrap">GO MAX</span></button>
+</div>
+</div>
+<div id="viewport-1-winner-controls-source-row-2" class="action-row" data-design-source="viewport-1-winner-controls-source-row-2">
+<div id="viewport-1-winner-controls-cashout" class="fx-abs" data-design-source="viewport-1-winner-controls-cashout">
+<button id="cashout" class="button cashout" type="button" data-12ui-hover-mode="surface-color" style="background:var(--ly-interaction-state-surface,#67aeb2);border:2.048px solid #1c5b6a;border-radius:11.264px;box-shadow:0 4.096px 0 #275f6a;display:inline-flex;align-items:center;justify-content:flex-end;cursor:pointer;--ly-interaction-hover-surface:rgb(95,160,164);" data-design-source="viewport-1-winner-controls-cashout-button" disabled=""><span>CASH OUT</span><strong id="cash-value">—</strong></button>
+<span id="viewport-1-winner-controls-cashout-icon" class="icon" role="img" aria-label="minus" style="pointer-events:none;display:block;color:#b3d7d2;" data-design-source="viewport-1-winner-controls-cashout-icon" hidden=""></span>
+</div>
+<div id="viewport-1-winner-controls-go" class="fx-col" data-design-source="viewport-1-winner-controls-go">
+<button id="go" class="button go" type="button" data-12ui-hover-mode="color-ring" style="background:linear-gradient(180deg, #ff6951, #f34a39);border:2.048px solid #91302c;border-radius:11.264px;box-shadow:0 4.096px 0 #b1352c;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;--ly-interaction-focus-color:#91302c;" data-design-source="viewport-1-winner-controls-go-button"><span id="go-label">GO</span><span id="go-arrow" aria-hidden="true">↑</span></button>
+</div>
+</div>
+<div id="viewport-1-winner-controls-source-row-3" class="difficulty-row" data-design-source="viewport-1-winner-controls-source-row-3" role="group" aria-label="Difficulty">
+<div id="viewport-1-winner-controls-difficulty-easy" class="fx-abs" data-design-source="viewport-1-winner-controls-difficulty-easy">
+<span id="viewport-1-winner-controls-difficulty-easy-icon" class="icon" role="img" aria-label="check" style="pointer-events:none;display:block;color:#fff1d0;" data-design-source="viewport-1-winner-controls-difficulty-easy-icon" hidden=""></span>
+<button id="viewport-1-winner-controls-difficulty-easy-button" class="button" type="button" data-12ui-hover-mode="color-ring" style="border:2.048px solid #173e5e;border-radius:10.24px;box-shadow:0 3.072px 0 #10687d;display:inline-flex;align-items:center;justify-content:flex-start;cursor:pointer;--ly-interaction-focus-color:#173e5e;" data-design-source="viewport-1-winner-controls-difficulty-easy-button" data-difficulty="easy" aria-pressed="true"><span>EASY</span></button>
+</div>
+<div id="viewport-1-winner-controls-difficulty-medium" class="fx-col" data-design-source="viewport-1-winner-controls-difficulty-medium">
+<button id="viewport-1-winner-controls-difficulty-medium-button" class="button" type="button" data-12ui-hover-mode="surface-color" style="border:2.048px solid #173e5e;border-radius:10.24px;box-shadow:0 3.072px 0 #c08951;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;--ly-interaction-hover-surface:rgb(235,222,190);" data-design-source="viewport-1-winner-controls-difficulty-medium-button" data-difficulty="medium" aria-pressed="false"><span>MEDIUM</span></button>
+</div>
+<div id="viewport-1-winner-controls-difficulty-hard" class="fx-col" data-design-source="viewport-1-winner-controls-difficulty-hard">
+<button id="viewport-1-winner-controls-difficulty-hard-button" class="button" type="button" data-12ui-hover-mode="surface-color" style="border:2.048px solid #173e5e;border-radius:10.24px;box-shadow:0 3.072px 0 #c08951;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;--ly-interaction-hover-surface:rgb(235,222,190);" data-design-source="viewport-1-winner-controls-difficulty-hard-button" data-difficulty="hard" aria-pressed="false"><span>HARD</span></button>
+</div>
+<div id="viewport-1-winner-controls-difficulty-hardcore" class="fx-col" data-design-source="viewport-1-winner-controls-difficulty-hardcore">
+<button id="viewport-1-winner-controls-difficulty-hardcore-button" class="button" type="button" data-12ui-hover-mode="surface-color" style="border:2.048px solid #173e5e;border-radius:10.24px;box-shadow:0 3.072px 0 #c08951;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;--ly-interaction-hover-surface:rgb(235,222,190);" data-design-source="viewport-1-winner-controls-difficulty-hardcore-button" data-difficulty="hardcore" aria-pressed="false"><span>HARDCORE</span></button>
+</div>
+</div>
+<div id="viewport-1-winner-controls-balance" class="balance-row" data-design-source="viewport-1-winner-controls-balance"><span>BALANCE <strong id="balance">$250.00</strong></span><span class="demo-note">DEMO</span></div>
+<p id="status" class="game-status" role="status" aria-live="polite"></p></section>
+</main>
+<dialog id="menu-dialog"><button id="close-menu" class="close-menu" aria-label="Close game menu">×</button><h1>Pirate Sea Hop</h1><p class="eyebrow">SCRIPTED VISUAL PREVIEW</p><p>GO makes one forward hop. After a safe landing, GO again or CASH OUT the current total return.</p><p>A $10.00 stake at 1.50× returns $15.00 in total. The six values shown are a visual sample. Production probabilities and difficulty schedules are not connected.</p><p>GO MAX is unavailable until its source behavior is confirmed. J1 is a temporary character awaiting approval.</p><label for="review-state">Preview a state</label><select id="review-state"><option value="ready">Ready on dock</option><option value="active">Safe landing</option><option value="cashout">Cashout</option><option value="sink">Barrel sinks</option><option value="shark">Shark strike</option><option value="tentacle">Tentacle grab</option><option value="funds">Insufficient balance</option><option value="reconnecting">Reconnecting</option></select><button id="reset-demo" class="reset-demo">Reset demo balance</button><a href="/game-art-review/instant/" target="_blank" rel="noopener">Back to the design review ↗</a></dialog>
+<script type="module" src="./game.js"></script></body></html>

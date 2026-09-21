@@ -1,0 +1,12 @@
+{
+  "source_version": 14,
+  "source_commit": "648b9799ba65922dd852c360eef47c836053c7ad",
+  "base_path": "/game-art-review/",
+  "original_site_files": 144,
+  "all_original_files_included": true,
+  "all_asset_bytes_preserved": true,
+  "local_urls_http_checked": 99,
+  "video_files_in_source": 0,
+  "latest_pdf_version": 5,
+  "validation": "JavaScript syntax, original asset byte comparisons and local HTTP URL checks. Browser rendering not verified in this environment."
+}

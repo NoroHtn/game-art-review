@@ -1,0 +1,35 @@
+@font-face{font-family:Caprasimo;src:url('/game-art-review/assets/fonts/Caprasimo-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+.stage{background:#07313d url('/game-art-review/assets/approved/background.png') center/cover;isolation:isolate}
+.stage::after,.stage .character,.stage-note{display:none!important}
+.scene-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.stage .phase{z-index:3;color:#fff1c4;text-shadow:0 2px 4px #00171f;font-size:14px;top:10%;letter-spacing:.05em}
+.stage .multiplier{color:#fff1c4;font-family:Caprasimo,Georgia,serif;font-weight:400;font-size:clamp(64px,8vw,128px);line-height:1.12;letter-spacing:-.035em;-webkit-text-stroke:5px #080f13;paint-order:stroke fill;text-shadow:3px 6px 0 #080f13;top:48%}
+.stage:not(.waiting):not(.preparing) .phase{top:calc(48% + 82px);font-family:Caprasimo,Georgia,serif;font-size:25px;font-weight:400;letter-spacing:.025em;-webkit-text-stroke:2px #080f13;paint-order:stroke fill;text-shadow:1px 2px #080f13}
+.game.is-grayscale{filter:grayscale(1)}
+.game-head .study-toggle{flex:0 0 auto;min-height:36px;min-width:46px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);font-size:12px;font-family:Arial,sans-serif;cursor:pointer}
+.game-head .study-toggle[aria-pressed=true]{background:#f0f1f2;color:#16191d}
+.game-head .brand{font-family:Caprasimo,Georgia,serif;font-weight:400;letter-spacing:-.01em}
+.stage.waiting .multiplier,.stage.preparing .multiplier{visibility:hidden}
+.stage-count{display:none}
+.mobile-scene .stage{height:auto!important;aspect-ratio:1.68;max-height:250px}
+.mobile-scene .stage .phase{top:8%;font-size:12px}
+.mobile-scene .stage .multiplier{top:46%;font-size:62px;-webkit-text-stroke:3px #080f13;text-shadow:2px 4px #080f13}
+.mobile-scene .stage:not(.waiting):not(.preparing) .phase{top:calc(46% + 43px);font-size:16px;-webkit-text-stroke:1.5px #080f13}
+.mobile-scene .game-head .brand{font-size:17px}
+.mobile-scene .game-head{gap:7px}
+.mobile-scene .game-head .balance{margin-left:auto;font-size:15px}
+.mobile-scene .game-head .balance small{font-size:10px}
+@media(max-width:760px){body:not(.mobile-scene) .stage{height:310px}.stage .multiplier{font-size:62px;-webkit-text-stroke:3px #080f13}.stage:not(.waiting):not(.preparing) .phase{top:calc(48% + 43px);font-size:16px}}
+.bet-head,.bet-status,.balance small,.foot,.feed-note,.receipt{font-size:12px}
+.auto-cash,.auto-bet,.tabs button,.quick button{font-size:14px}
+.history-strip span{font-size:12px}
+.receipt{line-height:1.4;min-height:17px}
+.mobile-scene .auto-bet{min-height:34px}
+.mobile-scene .auto-cash{font-size:12px}
+.mobile-scene .receipt{font-size:12px}
+.mobile-scene .bet-options{grid-template-columns:1.4fr 1fr}
+.mobile-scene .foot{flex-wrap:wrap;gap:8px}
+.round-demo-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;font-size:12px;color:var(--muted)}
+.round-demo-controls button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;min-height:36px;font-size:13px}
+.stage.round-ended .multiplier,.stage.round-ended .phase{left:43%}
+.mobile-scene .stage.round-ended .multiplier{font-size:52px}

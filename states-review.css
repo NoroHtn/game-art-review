@@ -1,0 +1,9 @@
+@font-face{font-family:Review Sans;src:url('/game-art-review/assets/fonts/NunitoSans-Regular.ttf') format('truetype');font-display:swap}
+body,#button-gallery{background:#f8fafc;color:#263647;font-family:Review Sans,Arial,sans-serif}
+#button-gallery{padding:24px}
+#button-gallery h2{font-size:22px}
+#button-gallery>p{font-size:14px;color:#5d6b7b;line-height:1.6}
+.gallery{gap:16px}
+.gallery h3{font-size:14px}
+.gallery p{font-size:12px;line-height:1.5}
+@media(max-width:480px){#button-gallery{padding:14px}.gallery{gap:10px}.gallery .primary .label{font-size:13px}.gallery .primary .value{font-size:21px}.gallery h3{min-height:34px}}
