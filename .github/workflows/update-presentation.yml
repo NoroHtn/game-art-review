@@ -1,0 +1,155 @@
+name: Update presentation PDF
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-presentation.yml'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: presentation-pdf-update
+  cancel-in-progress: false
+
+env:
+  PDF_TAG: presentation-update-5ce7a2d9
+  PDF_SHA256: 5ce7a2d938b1a1412aaf0921e4407467dd8a324c698294b12e6318357cfcc7c2
+  PDF_BYTES: '36958363'
+  PDF_PATH: assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf
+
+jobs:
+  prepare-upload:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Prepare the new PDF upload draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/pdf-notes.md" <<'NOTES'
+          ## Replace only the website presentation PDF
+
+          1. Edit this draft using the pencil icon.
+          2. Attach **Cow_and_Aliens_Test_Presentation(1).pdf** in the file attachment area below. Upload the PDF itself, not a ZIP.
+          3. Wait until the upload finishes, then click **Publish release**.
+
+          No Pages settings changes are needed. Do not upload the old website ZIP again.
+
+          This update accepts only the new 25-page presentation supplied on September 21, 2026. It checks the file's exact SHA-256 and size before replacing **assets/deliverables/Cow_and_Aliens_Test_Presentation.pdf**. All other website files remain unchanged, and all existing PDF links keep working.
+
+          The workflow then deploys the website and checks that the live PDF matches the uploaded file byte for byte. Progress appears under **Actions → Update presentation PDF**.
+
+          Expected size: **36,958,363 bytes**.
+          SHA-256: `5ce7a2d938b1a1412aaf0921e4407467dd8a324c698294b12e6318357cfcc7c2`
+          NOTES
+          if ! gh release view "$PDF_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$PDF_TAG" --repo "$GITHUB_REPOSITORY" --target main --draft --title 'PDF update - upload new presentation here' --notes-file "$RUNNER_TEMP/pdf-notes.md"
+          fi
+          gh release view "$PDF_TAG" --repo "$GITHUB_REPOSITORY" --json url,isDraft
+          echo 'Draft prepared. The live PDF is unchanged until the matching new PDF is uploaded and this release is published.' >> "$GITHUB_STEP_SUMMARY"
+
+  replace-pdf:
+    if: (github.event_name == 'release' && github.event.release.tag_name == 'presentation-update-5ce7a2d9') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Download the new presentation from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pdf-update"
+          gh release download "$PDF_TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.pdf' --dir "$RUNNER_TEMP/pdf-update"
+      - name: Verify exact bytes and replace only the presentation PDF
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          uploads = list((Path(os.environ['RUNNER_TEMP']) / 'pdf-update').glob('*.pdf'))
+          if len(uploads) != 1:
+              raise SystemExit('Attach exactly one new PDF to this release. No website files changed.')
+          data = uploads[0].read_bytes()
+          digest = hashlib.sha256(data).hexdigest()
+          if len(data) != int(os.environ['PDF_BYTES']) or digest != os.environ['PDF_SHA256'] or not data.startswith(b'%PDF-'):
+              raise SystemExit('PDF does not match the approved new upload. No website files changed. SHA256: ' + digest)
+          target = Path(os.environ['PDF_PATH'])
+          if not target.is_file() or target.is_symlink():
+              raise SystemExit('Expected existing website PDF was not found as a regular file. No changes made.')
+          previous = target.read_bytes()
+          previous_blob = hashlib.sha1(b'blob ' + str(len(previous)).encode() + b'\0' + previous).hexdigest()
+          if previous_blob not in {'b305347e65199f47a2011095049eb6c7b224fc7c', '757073b9dde7fbfb1e179235a308339f49d297a2'}:
+              raise SystemExit('The website PDF has changed since this update was prepared. Stopping to avoid overwriting a newer revision.')
+          target.write_bytes(data)
+          print('Verified and replaced only:', target, len(data), 'bytes; SHA256:', digest)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('Verified new PDF: 36,958,363 bytes. Only the existing presentation PDF is replaced.\n\nSHA-256: `' + digest + '`\n')
+          PY
+      - name: Commit only the PDF replacement
+        id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$PDF_PATH"
+          if ! git diff --cached --quiet; then
+            if [ "$(git diff --cached --name-only)" != "$PDF_PATH" ]; then
+              echo 'Unexpected staged files. Refusing to commit.' >&2
+              exit 1
+            fi
+            git commit -m 'Replace presentation with the exact new 25-page PDF'
+            git push origin HEAD:main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Deploy and wait for GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PDF_COMMIT: ${{ steps.commit.outputs.sha }}
+        run: |
+          gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
+          run_id=''
+          for attempt in $(seq 1 20); do
+            run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-pages.yml --branch main --commit "$PDF_COMMIT" --event workflow_dispatch --limit 5 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$run_id" ]; then break; fi
+            sleep 3
+          done
+          if [ -z "$run_id" ]; then
+            echo 'PDF committed, but deployment run was not found. Check Deploy Game Art Review under Actions.' >&2
+            exit 1
+          fi
+          echo "Deployment run: $run_id"
+          gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status --interval 5
+      - name: Verify the live PDF matches the new upload
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, time, urllib.request
+          expected = os.environ['PDF_SHA256']
+          url = 'https://norohtn.github.io/game-art-review/' + os.environ['PDF_PATH'] + '?v=' + expected
+          for attempt in range(12):
+              try:
+                  request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache', 'User-Agent': 'Game-Art-Review-PDF-Verification/1.0'})
+                  with urllib.request.urlopen(request, timeout=45) as response:
+                      data = response.read()
+                  if len(data) == int(os.environ['PDF_BYTES']) and hashlib.sha256(data).hexdigest() == expected:
+                      print('LIVE PDF VERIFIED: the website serves the exact new PDF.')
+                      with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                          summary.write('\nLive PDF verified byte for byte: [Open updated presentation](' + url + ')\n')
+                      break
+                  print('The public cache still serves an earlier PDF. Retrying.')
+              except Exception as error:
+                  print('Live verification attempt', attempt + 1, 'failed:', error)
+              if attempt == 11:
+                  raise SystemExit('Deployment finished, but live PDF checksum verification did not pass. Check the public PDF before declaring the update complete.')
+              time.sleep(10)
+          PY
