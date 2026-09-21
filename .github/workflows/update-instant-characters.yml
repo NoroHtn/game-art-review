@@ -1,0 +1,284 @@
+name: Update approved Instant character boards
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-instant-characters.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  # Serialize with the reference update so its approved order is preserved.
+  group: instant-moodboard-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Import the four original boards and update only the Characters page
+        run: |
+          python3 - <<'PY'
+          import hashlib, re, urllib.request
+          from pathlib import Path
+          images = [
+              ('01-pirate.png', 'https://pikaso.cdnpk.net/private/production/5512502548/3622083925.png?token=exp=1790294400~hmac=eabc832a5cc82c8f3e28cc8884ea980c573238fd06514b41bb8639fd39738802', '39623ea74bb8137f712e247658ab63f875f34b9c0b7ea61bb4c36ec6637a5b6d'),
+              ('02-siren.png', 'https://pikaso.cdnpk.net/private/production/5512504369/3622084770.png?token=exp=1790294400~hmac=6a3be71bf72ceb2896a41cbcc34397fccfb5f5f6cb3ce6681b8e599b2e139732', '4b0bffd82f9f1b5b1d891d686eafbc196ade8671264147694e62585d4a6fab61'),
+              ('03-kraken.png', 'https://pikaso.cdnpk.net/private/production/5512505952/3622085549.png?token=exp=1790294400~hmac=137ed2f4041295af144184c9f4834b40ef79681b46fa5ec414b3e5171c269462', '1c672cd366999f399676ea79766d64ddbf765fbfdaf4177a5250d5536c1cfc7b'),
+              ('04-shark.png', 'https://pikaso.cdnpk.net/private/production/5512507595/3622086412.png?token=exp=1790294400~hmac=c1c92263b9bfe3a7ef67e909adea4091a37571e778de6bd426ff29ac9a05e073', '60a0e6cb4a08f09c73bd1ef71e516cdc9e07c23148457a6eb649fbf273d4f396')
+          ]
+          root = Path('assets/instant-final/characters')
+          downloaded = {}
+          for name, url, checksum in images:
+              target = root / name
+              if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() == checksum:
+                  data = target.read_bytes()
+              else:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'Game-Art-Review-Asset-Import'})
+                  with urllib.request.urlopen(req, timeout=90) as response:
+                      data = response.read()
+              assert data.startswith(b'\x89PNG\r\n\x1a\n'), 'Not a PNG: ' + name
+              assert hashlib.sha256(data).hexdigest() == checksum, 'Original image checksum mismatch: ' + name
+              downloaded[target] = data
+          module = r'''// Approved character boards, displayed in the exact supplied order.
+          const ROOT = '/game-art-review/assets/instant-final/characters/';
+          const BOARDS = [
+            {name: 'Pirate', file: '01-pirate.png', width: 1802, height: 739},
+            {name: 'Siren', file: '02-siren.png', width: 1672, height: 941},
+            {name: 'Kraken', file: '03-kraken.png', width: 1672, height: 941},
+            {name: 'Shark', file: '04-shark.png', width: 1672, height: 941}
+          ];
+          export function renderCharacterBoards(heading) {
+            document.body.classList.add('instant-characters-page');
+            if (!document.getElementById('instant-characters-style')) {
+              const style = document.createElement('link');
+              style.id = 'instant-characters-style';
+              style.rel = 'stylesheet';
+              style.href = '/game-art-review/instant-characters.css?v=20260921-boards4';
+              document.head.append(style);
+            }
+            return heading('03 / INSTANT GAME', 'Characters of the crossing.', 'Pirate, Siren, Kraken and Shark. Full-body front, back and three-quarter views.') +
+              '<div class="instant-character-boards">' + BOARDS.map((board, index) => `
+                <figure class="character-board" id="character-${board.name.toLowerCase()}">
+                  <a class="character-board-art" href="${ROOT + board.file}" data-character-open="${index}" target="_blank" rel="noopener" aria-label="View ${board.name} board full screen">
+                    <img src="${ROOT + board.file}" alt="${board.name}: full-body front, back and three-quarter character views" width="${board.width}" height="${board.height}" loading="${index === 0 ? 'eager' : 'lazy'}" decoding="async">
+                  </a>
+                  <figcaption><div><h2>${String(index + 1).padStart(2, '0')} · ${board.name}</h2><p>Front / Back / Three-quarter</p></div><button type="button" data-character-open="${index}" class="link-button">View full screen ↗</button></figcaption>
+                </figure>`).join('') + '</div>';
+          }
+          export function wireCharacterBoards(content) {
+            // Create the viewer on demand: the page initially contains only the four boards.
+            let dialog, current = 0, opener, priorOverflow = '';
+            function show(index) {
+              current = (index + BOARDS.length) % BOARDS.length;
+              const board = BOARDS[current];
+              const image = dialog.querySelector('img');
+              image.src = ROOT + board.file;
+              image.alt = `${board.name}: full-body front, back and three-quarter character views`;
+              image.width = board.width;
+              image.height = board.height;
+              dialog.querySelector('#character-viewer-title').textContent = `${String(current + 1).padStart(2, '0')} / 04 · ${board.name}`;
+              dialog.querySelector('[data-original]').href = ROOT + board.file;
+            }
+            function createViewer() {
+              dialog = document.createElement('dialog');
+              dialog.className = 'character-fullscreen';
+              dialog.setAttribute('aria-labelledby', 'character-viewer-title');
+              dialog.innerHTML = '<header class="character-viewer-toolbar"><strong id="character-viewer-title" aria-live="polite"></strong><div><a data-original target="_blank" rel="noopener">Open original ↗</a><button type="button" data-close aria-label="Close full-screen character board">Close ×</button></div></header><div class="character-viewer-stage"><img alt="" decoding="async"></div><nav class="character-viewer-nav" aria-label="Character boards"><button type="button" data-prev aria-label="Previous character board">← Previous</button><span>Front / Back / Three-quarter</span><button type="button" data-next aria-label="Next character board">Next →</button></nav>';
+              document.body.append(dialog);
+              dialog.querySelector('[data-close]').onclick = () => dialog.close();
+              dialog.querySelector('[data-prev]').onclick = () => show(current - 1);
+              dialog.querySelector('[data-next]').onclick = () => show(current + 1);
+              dialog.addEventListener('keydown', event => {
+                if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                  event.preventDefault();
+                  show(current + (event.key === 'ArrowRight' ? 1 : -1));
+                }
+              });
+              dialog.addEventListener('close', () => {
+                document.documentElement.style.overflow = priorOverflow;
+                if (opener && opener.isConnected) opener.focus({preventScroll: true});
+              });
+            }
+            content.querySelectorAll('[data-character-open]').forEach(control => {
+              control.addEventListener('click', event => {
+                // Preserve standard link behavior for new-tab and modifier-click actions.
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                if (!window.HTMLDialogElement || !HTMLDialogElement.prototype.showModal) {
+                  if (control.tagName === 'BUTTON') window.open(ROOT + BOARDS[Number(control.dataset.characterOpen)].file, '_blank', 'noopener');
+                  return;
+                }
+                event.preventDefault();
+                opener = control;
+                if (!dialog) createViewer();
+                show(Number(control.dataset.characterOpen));
+                priorOverflow = document.documentElement.style.overflow;
+                document.documentElement.style.overflow = 'hidden';
+                dialog.showModal();
+              });
+            });
+          }
+          '''
+          css = '''/* Scoped to Instant / 03 Characters; other galleries and the Crash game are unchanged. */
+          .instant-characters-page main{max-width:none}
+          .instant-character-boards{display:grid;grid-template-columns:minmax(0,1fr);gap:32px;width:100%;max-width:none}
+          .pirate-review .character-board{margin:0;width:100%;min-width:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff}
+          .character-board-art{display:block;width:100%;padding:0;background:#fff;cursor:zoom-in}
+          .pirate-review .character-board-art img{display:block;width:100%;height:auto;max-width:none;max-height:none;object-fit:contain;padding:0;margin:0}
+          .character-board figcaption{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-top:1px solid var(--border)}
+          .character-board figcaption h2{margin:0;font-size:18px}
+          .character-board figcaption p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+          .character-board figcaption .link-button{flex:none}
+          .character-fullscreen{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:#f7f8fa;color:var(--ink);overflow:hidden;box-sizing:border-box}
+          .character-fullscreen[open]{display:flex;flex-direction:column}
+          .character-fullscreen::backdrop{background:#10151a}
+          .character-viewer-toolbar,.character-viewer-nav{flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;background:#fff}
+          .character-viewer-toolbar{border-bottom:1px solid var(--border);padding-top:max(12px,env(safe-area-inset-top))}
+          .character-viewer-toolbar>div{display:flex;align-items:center;gap:16px}
+          .character-viewer-toolbar strong{font-size:15px}
+          .character-viewer-toolbar a{font-size:13px}
+          .character-fullscreen button{border:1px solid var(--border);border-radius:7px;background:#fff;padding:10px 16px;min-height:44px;font:inherit;cursor:pointer}
+          .character-viewer-stage{flex:1;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+          .character-viewer-stage img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;margin:0;padding:0}
+          .character-viewer-nav{border-top:1px solid var(--border);padding-bottom:max(12px,env(safe-area-inset-bottom))}
+          .character-viewer-nav span{font-size:13px;color:var(--muted)}
+          @media(max-width:600px){.instant-character-boards{gap:24px}.character-board figcaption{padding:12px;gap:12px;flex-wrap:wrap}.character-board figcaption h2{font-size:17px}.character-board figcaption p{font-size:12px}.character-board figcaption .link-button{padding:9px 12px;font-size:12px}.character-viewer-toolbar,.character-viewer-nav{padding-inline:12px;gap:10px}.character-viewer-toolbar>div{gap:10px}.character-viewer-toolbar a{font-size:11px}.character-viewer-toolbar strong{font-size:13px}.character-fullscreen button{font-size:13px;padding:8px 12px}.character-viewer-nav span{display:none}}
+          '''
+          path = Path('instant-review.js')
+          text = path.read_text()
+          imports = " const characters=active==='character-concept'?await import('/game-art-review/instant-characters.js?v=20260921-boards4'):null;\n"
+          if imports not in text:
+              assert text.count(' const pages={') == 1, 'Unexpected Instant renderer structure.'
+              text = text.replace(' const pages={', imports + ' const pages={', 1)
+          text, count = re.subn(r"^ 'character-concept':.*$", " 'character-concept':()=>characters.renderCharacterBoards(heading),", text, flags=re.M)
+          assert count == 1, 'Expected exactly one Characters page.'
+          anchor = ' content.innerHTML=(pages[active]||pages.brief)();'
+          wire = ' if(characters)characters.wireCharacterBoards(content);'
+          if wire not in text:
+              assert text.count(anchor) == 1
+              text = text.replace(anchor, anchor + '\n' + wire, 1)
+          site = Path('site.js').read_text()
+          site, count = re.subn(r"/game-art-review/instant-review\.js(?:\?v=[^'\"\s<>]+)?", '/game-art-review/instant-review.js?v=20260921-boards4', site)
+          assert count == 1, 'Expected one Instant module import.'
+          html = Path('instant/index.html').read_text()
+          html, count = re.subn(r'/game-art-review/site\.js(?:\?[^"\s<>]*)?', '/game-art-review/site.js?v=20260921-boards4', html)
+          assert count == 1, 'Expected one site script on the Instant entry page.'
+          root.mkdir(parents=True, exist_ok=True)
+          for target, data in downloaded.items():
+              target.write_bytes(data)
+          Path('instant-characters.js').write_text(module)
+          Path('instant-characters.css').write_text(css)
+          path.write_text(text)
+          Path('site.js').write_text(site)
+          Path('instant/index.html').write_text(html)
+          print('Imported byte-identical originals: Pirate, Siren, Kraken, Shark.')
+          print('Replaced old Characters gallery only. Reference manifest, other pages, PDFs and source packs unchanged.')
+          PY
+      - name: Validate JavaScript and commit the focused change
+        run: |
+          node --check instant-review.js
+          node --check instant-characters.js
+          node --check site.js
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/instant-final/characters instant-characters.js instant-characters.css instant-review.js site.js instant/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Replace Instant Characters with four full-width approved turnaround boards'
+            git push origin HEAD:main
+          fi
+          echo "UPDATED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Publish the updated website
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run deploy-pages.yml --ref main
+          for i in $(seq 1 30); do
+            RUN_ID=$(gh run list --workflow deploy-pages.yml --commit "$UPDATED_SHA" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$RUN_ID" ]; then break; fi
+            sleep 5
+          done
+          test -n "$RUN_ID"
+          gh run watch "$RUN_ID" --exit-status --interval 10
+      - name: Verify the live files match the original uploads
+        run: |
+          python3 - <<'PY'
+          import hashlib, time, urllib.request
+          from pathlib import Path
+          base = 'https://norohtn.github.io/game-art-review/'
+          expected = {
+              '01-pirate.png': '39623ea74bb8137f712e247658ab63f875f34b9c0b7ea61bb4c36ec6637a5b6d',
+              '02-siren.png': '4b0bffd82f9f1b5b1d891d686eafbc196ade8671264147694e62585d4a6fab61',
+              '03-kraken.png': '1c672cd366999f399676ea79766d64ddbf765fbfdaf4177a5250d5536c1cfc7b',
+              '04-shark.png': '60a0e6cb4a08f09c73bd1ef71e516cdc9e07c23148457a6eb649fbf273d4f396'
+          }
+          def get(path):
+              sep = '&' if '?' in path else '?'
+              req = urllib.request.Request(base + path + sep + 'verify=' + str(time.time_ns()), headers={'Cache-Control': 'no-cache'})
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return response.read()
+          for attempt in range(15):
+              try:
+                  for name, checksum in expected.items():
+                      assert hashlib.sha256(get('assets/instant-final/characters/' + name)).hexdigest() == checksum, name
+                  for name in ['instant-characters.js', 'instant-characters.css', 'instant-review.js', 'site.js']:
+                      assert get(name) == Path(name).read_bytes(), name
+                  assert b'/game-art-review/site.js?v=20260921-boards4' in get('instant/?section=character-concept')
+                  print('LIVE VERIFIED: all four original PNGs are unchanged; new renderer, CSS and cache-busted entry page are published.')
+                  break
+              except Exception:
+                  if attempt == 14:
+                      raise
+                  time.sleep(10)
+          PY
+      - name: Install browser verification tools
+        run: python3 -m pip install --quiet playwright
+      - name: Verify live desktop and mobile rendering and full-screen controls
+        run: |
+          python3 - <<'PY'
+          import shutil, subprocess, sys, time
+          from playwright.sync_api import sync_playwright
+          chrome = shutil.which('google-chrome') or shutil.which('chromium')
+          if not chrome:
+              subprocess.run([sys.executable, '-m', 'playwright', 'install', 'chromium'], check=True)
+          with sync_playwright() as p:
+              options = {'headless': True, 'args': ['--no-sandbox']}
+              if chrome:
+                  options['executable_path'] = chrome
+              browser = p.chromium.launch(**options)
+              for width, height in [(1440, 1000), (768, 1024), (390, 844), (844, 390)]:
+                  page = browser.new_page(viewport={'width': width, 'height': height})
+                  errors = []
+                  page.on('pageerror', lambda error: errors.append(str(error)))
+                  page.goto('https://norohtn.github.io/game-art-review/instant/?section=character-concept&verify=' + str(time.time_ns()), wait_until='networkidle', timeout=90000)
+                  assert page.locator('.character-board').count() == 4
+                  assert page.locator('.character-board h2').all_text_contents() == ['01 · Pirate', '02 · Siren', '03 · Kraken', '04 · Shark']
+                  assert page.locator('#content .instant-asset-grid').count() == 0
+                  assert page.locator('#content img').count() == 4
+                  for image in page.locator('.character-board-art img').all():
+                      image.scroll_into_view_if_needed()
+                      image.evaluate('(im)=>im.decode()')
+                  checks = page.evaluate('''()=>{const area=document.querySelector('.instant-character-boards').getBoundingClientRect();return [...document.querySelectorAll('.character-board-art img')].map(im=>{const r=im.getBoundingClientRect();return {w:r.width,h:r.height,nw:im.naturalWidth,nh:im.naturalHeight,area:area.width,fit:getComputedStyle(im).objectFit};});}''')
+                  assert all(abs(c['w'] - (c['area'] - 2)) < 1 for c in checks), checks
+                  assert all(abs(c['h'] - c['w'] * c['nh'] / c['nw']) < 1 for c in checks), checks
+                  assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Horizontal overflow'
+                  page.locator('.character-board button').nth(1).click()
+                  page.locator('dialog[open] img').evaluate('(im)=>im.decode()')
+                  box = page.locator('dialog[open]').bounding_box()
+                  assert box['width'] == width and box['height'] == height, box
+                  assert page.locator('#character-viewer-title').inner_text() == '02 / 04 · Siren'
+                  page.keyboard.press('ArrowRight')
+                  assert page.locator('#character-viewer-title').inner_text() == '03 / 04 · Kraken'
+                  page.locator('[data-prev]').click()
+                  assert page.locator('#character-viewer-title').inner_text() == '02 / 04 · Siren'
+                  page.keyboard.press('Escape')
+                  assert page.locator('dialog[open]').count() == 0
+                  assert page.locator('.character-board button').nth(1).evaluate('(el)=>el === document.activeElement')
+                  assert not errors, errors
+                  print(f'LIVE BROWSER PASS {width}x{height}: 4 ordered full-width boards; no cropping; no overflow; full-screen viewer, next/previous, Escape and focus restoration work.')
+                  page.close()
+              browser.close()
+          PY
