@@ -1,0 +1,150 @@
+name: Update Instant Motion tentacles
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-instant-motion-tentacles.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: instant-motion-tentacles-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Import the original PNGs and update only the Motion section
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          uploads = [
+              ('tentacles-combined.png', '8abb65167a4673ae03e7bdaa915a594b222cef3bde13baea31dc8e7a601b59f3', 'https://pikaso.cdnpk.net/private/production/5512988981/3622312884.png?token=exp=1790294400~hmac=fb47b5a6c0f8ebeb347c8b1267bda63efba150a4234dd732b45fbb607bdf3cdd'),
+              ('kraken-losing-state-03.png', 'ada18ac51653ca46e90d5ea5b6fc2704e6d53fe8f3cd80e1209ee003fa18dc0c', 'https://pikaso.cdnpk.net/private/production/5512990232/3622313508.png?token=exp=1790294400~hmac=40d2c4082c65879b389003e110d51fadb201a1de98ac409870bc5699bd790c97'),
+          ]
+          for filename, expected, url in uploads:
+              target = Path('assets/instant-final/art') / filename
+              if target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() == expected:
+                  continue
+              with urllib.request.urlopen(url, timeout=90) as response:
+                  data = response.read()
+              if not data.startswith(b'\x89PNG\r\n\x1a\n') or hashlib.sha256(data).hexdigest() != expected:
+                  raise SystemExit('Original upload checksum mismatch: ' + filename)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(data)
+
+          module = Path('instant-review.js')
+          original = module.read_text()
+          Path('/tmp/instant-review.before.js').write_text(original)
+          lines = original.splitlines(keepends=True)
+          gallery_rows = [i for i, line in enumerate(lines) if line.lstrip().startswith('const motionGallery=')]
+          if len(gallery_rows) != 1:
+              raise SystemExit('Unexpected Motion gallery structure; refusing to overwrite.')
+          lines[gallery_rows[0]] = " const motionGallery=()=>`<div class=\"instant-asset-grid\">${fig('art/tentacles-combined.png','Tentacles · single combined layer','Original supplied artwork, with all tentacles and water together in one layer.')}${m.assets.filter(a=>a.category==='hazard'&&!a.title.toLowerCase().includes('tentacle')).map(a=>fig('art/'+a.file,a.title)).join('')}${fig('art/shark-fin-motion.png','Shark fin')}</div>`;\n"
+          animation_rows = [i for i, line in enumerate(lines) if line.lstrip().startswith('animation:')]
+          if len(animation_rows) != 1:
+              raise SystemExit('Unexpected Motion page structure; refusing to overwrite.')
+          old_refs = '<div class="pirate-two">${fig(\'art/DF70CFF3-41E1-436F-A3B7-CD210B5A7C4E.webp\',\'Shark encounter pose\')}${fig(\'art/17FC7B14-020B-4501-AC7E-A98463E068A9.webp\',\'Mermaid encounter pose\')}</div>'
+          new_refs = '<section aria-labelledby="instant-losing-state-references"><h2 id="instant-losing-state-references">Losing-state references</h2><div class="pirate-two">${fig(\'art/DF70CFF3-41E1-436F-A3B7-CD210B5A7C4E.webp\',\'Shark encounter pose\')}${fig(\'art/17FC7B14-020B-4501-AC7E-A98463E068A9.webp\',\'Mermaid encounter pose\')}${fig(\'art/kraken-losing-state-03.png\',\'03 · Kraken encounter pose\',\'Third losing-state reference · original supplied artwork.\')}</div></section>'
+          i = animation_rows[0]
+          if old_refs in lines[i]:
+              lines[i] = lines[i].replace(old_refs, new_refs, 1)
+          elif new_refs not in lines[i]:
+              raise SystemExit('Unexpected losing-state references; refusing to overwrite.')
+          updated = ''.join(lines)
+          if '+motionGallery()+' not in updated:
+              raise SystemExit('Motion gallery is not connected.')
+          module.write_text(updated)
+
+          version = '20260922-motion-tentacles-v1'
+          site = Path('site.js')
+          text, count = re.subn(r'/game-art-review/instant-review\.js(?:\?v=[^\x27\x22\s<>]*)?', '/game-art-review/instant-review.js?v=' + version, site.read_text())
+          if count != 1:
+              raise SystemExit('Unexpected Instant module import count.')
+          site.write_text(text)
+          page = Path('instant/index.html')
+          text, count = re.subn(r'/game-art-review/site\.js(?:\?v=[^\x27\x22\s<>]*)?', '/game-art-review/site.js?v=' + version, page.read_text())
+          if count != 1:
+              raise SystemExit('Unexpected Instant entry script count.')
+          def update_importmap(match):
+              data = json.loads(match.group(2))
+              for key, value in data.get('imports', {}).items():
+                  if isinstance(value, str) and value.startswith('/game-art-review/instant-review.js'):
+                      data['imports'][key] = '/game-art-review/instant-review.js?v=' + version
+              return match.group(1) + json.dumps(data, separators=(',', ':')) + match.group(3)
+          text = re.sub(r'(<script\s+type="importmap">)(.*?)(</script>)', update_importmap, text, flags=re.S)
+          page.write_text(text)
+          print('Both original PNG checksums verified. Motion gallery and third losing-state reference updated. Other page content preserved.')
+          PY
+      - name: Validate JavaScript, rendered content, order, and unchanged sections
+        run: |
+          node --check instant-review.js
+          node --check site.js
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const manifest = JSON.parse(fs.readFileSync('assets/instant-final/manifest.json', 'utf8'));
+          globalThis.document = {body:{classList:{add(){}}}, querySelector(){return {};}};
+          globalThis.innerWidth = 390;
+          globalThis.fetch = async () => ({ok:true,json:async()=>manifest});
+          const load = async file => import('data:text/javascript;base64,' + Buffer.from(fs.readFileSync(file,'utf8')).toString('base64'));
+          const before = await load('/tmp/instant-review.before.js');
+          const after = await load('instant-review.js');
+          const render = async (module, active) => {
+            const content = {innerHTML:'',querySelector(){return null;},querySelectorAll(){return [];}};
+            await module.renderInstant({content,active,heading:(...args)=>args.join(' | '),wireDisplay(){}});
+            return content.innerHTML;
+          };
+          for (const section of ['brief','art-direction','environment','final-ui','states','production','deliverables']) {
+            assert.equal(await render(after,section), await render(before,section), 'Unrelated section changed: ' + section);
+          }
+          const html = await render(after,'animation');
+          const images = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)].map(m=>m[1]);
+          assert.equal(images.filter(src=>src.endsWith('/tentacles-combined.png')).length,1);
+          assert.equal(images.filter(src=>src.endsWith('/kraken-losing-state-03.png')).length,1);
+          for(const asset of manifest.assets.filter(a=>a.category==='hazard'&&a.title.toLowerCase().includes('tentacle'))) {
+            assert(!images.some(src=>src.endsWith('/'+asset.file)), 'Separate tentacle still visible: '+asset.title);
+          }
+          assert(images.some(src=>src.endsWith('/shark-fin-motion.png')), 'Shark fin was removed');
+          for(const asset of manifest.assets.filter(a=>a.category==='hazard'&&!a.title.toLowerCase().includes('tentacle'))) {
+            assert(images.some(src=>src.endsWith('/'+asset.file)), 'Unrelated Motion asset removed: '+asset.title);
+          }
+          assert.deepEqual(images.slice(-3).map(src=>src.split('/').pop()), [
+            'DF70CFF3-41E1-436F-A3B7-CD210B5A7C4E.webp',
+            '17FC7B14-020B-4501-AC7E-A98463E068A9.webp',
+            'kraken-losing-state-03.png'
+          ]);
+          for(const src of images) assert(fs.existsSync(src.replace('/game-art-review/','').split('?')[0]), 'Missing artwork: '+src);
+          console.log('PASS: original tentacles are one image; no separate tentacles remain in Motion; losing-state reference 03 is last; all image paths exist; seven unrelated sections are unchanged.');
+          JS
+      - name: Commit the Motion changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/instant-final/art/tentacles-combined.png assets/instant-final/art/kraken-losing-state-03.png instant-review.js site.js instant/index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Replace separate Motion tentacles with original combined layer and add third losing-state reference'
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then break; fi
+              if [ "$attempt" -eq 3 ]; then exit 1; fi
+              git pull --rebase origin main
+            done
+          fi
+      - name: Publish through the existing GitHub Pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --ref main
