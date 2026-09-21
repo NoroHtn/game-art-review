@@ -123,19 +123,28 @@
   else if(active === 'components')inventory();
   else {
     try {
-      const response = await fetch('/game-art-review/' + active + '-content.html?v=20260922-crash-label-cleanup');
+      const response = await fetch('/game-art-review/' + active + '-content.html?v=20260922-crash-figma-new-tab-v2', {cache:'no-cache'});
       if(!response.ok)throw new Error('Page unavailable');
       content.innerHTML = await response.text();
       const kicker = content.querySelector('.art-kicker');
       if(kicker && current)kicker.textContent = String(sections.indexOf(current)+1).padStart(2,'0') + ' / ' + current[1].toUpperCase();
       if(active === 'final-ui') {
         const section = content.querySelector('article');
-        section.insertAdjacentHTML('afterbegin','<nav class="board-jumps" aria-label="Game screen review"><a href="/game-art-review/states/">All 29 final screens</a><a href="https://www.figma.com/design/AsCxwtHPQaX1Ra1NKav1kq/Norair-Harutyunyan-Test-Task---CRASH-GAME--?node-id=8-10993&amp;t=yymlcTTt1zcWINbN-1" target="_top" rel="noopener">Open Figma ↗</a><a href="/game-art-review/desktop/">Interactive desktop study ↗</a><a href="/game-art-review/mobile/">Interactive mobile study ↗</a></nav>');
+        section.insertAdjacentHTML('afterbegin','<nav class="board-jumps" aria-label="Game screen review"><a href="/game-art-review/states/">All 29 final screens</a><a href="https://www.figma.com/design/AsCxwtHPQaX1Ra1NKav1kq/Norair-Harutyunyan-Test-Task---CRASH-GAME--?node-id=8-10993&amp;t=yymlcTTt1zcWINbN-1" target="_blank" rel="noopener">Open Figma ↗</a><a href="/game-art-review/desktop/">Interactive desktop study ↗</a><a href="/game-art-review/mobile/">Interactive mobile study ↗</a></nav>');
       }
     } catch {
       content.innerHTML = heading('PAGE UNAVAILABLE', 'This section could not load.', 'Please reload the page or return to the brief.') + '<a class="link-button" href="/game-art-review/brief/">Back to concept & brief</a>';
     }
   }
+  // Keep every Crash Figma link in a separate tab, including older cached fragments.
+  // The Instant renderer and its links are intentionally unchanged.
+  if(!instant)content.querySelectorAll('a[href]').forEach(link => {
+    const url = new URL(link.href, location.href);
+    if(url.hostname === 'www.figma.com' || url.hostname === 'figma.com') {
+      link.target = '_blank';
+      link.relList.add('noopener');
+    }
+  });
   const copyFigma = content.querySelector('#copy-figma-link');
   if(copyFigma)copyFigma.addEventListener('click',async () => {
     const input = content.querySelector('#figma-link-value');
