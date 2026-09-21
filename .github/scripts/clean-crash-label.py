@@ -56,9 +56,10 @@ def rewrite(text, path):
     if path.as_posix() == 'source-notes/reviewer-redesign.md':
         text = re.sub(r'^- Working title[^\n]*$', '- Neutral Crash Game labels across page branding and browser titles.', text, flags=re.M)
     text = OLD.sub('Crash Game', text)
-    # Keep the existing PDF address, but refresh links to bypass cached copies.
+    if path.suffix.lower() not in {'.html', '.js', '.mjs'}:
+        return text
+    # Keep the existing PDF address, but refresh browser links, not source paths.
     text = re.sub(r'(Cow_and_Aliens_Test_Presentation\.pdf)(?:\?v=[^\s\"\'<>]*)?', r'\1?v=' + VERSION, text)
-    # Download filenames must not contain URL query parameters.
     text = text.replace('download="Cow_and_Aliens_Test_Presentation.pdf?v=' + VERSION + '"', 'download="Cow_and_Aliens_Test_Presentation.pdf"')
     for filename in ('site.js', 'scene-player.js'):
         text = re.sub(r'(/game-art-review/' + re.escape(filename) + r')(?:\?v=[^\s\"\'<>]*)?', r'\1?v=' + VERSION, text)
@@ -128,12 +129,13 @@ def apply():
     # The cover artwork and supporting copy are unchanged outside the title area.
     a = clean[0].get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
     b = original[0].get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
+    sa, sb = a.samples_mv, b.samples_mv
     for y in range(a.height):
         for x in range(a.width):
             if 45 <= x <= 430 and 115 <= y <= 300:
                 continue
             at = (y * a.width + x) * 3
-            if a.samples_mv[at:at+3] != b.samples_mv[at:at+3]:
+            if sa[at:at+3] != sb[at:at+3]:
                 raise RuntimeError('Unexpected cover change outside the title region.')
     clean[0].get_pixmap(matrix=fitz.Matrix(1.3, 1.3), alpha=False).save(OUT / 'cover-after.png')
     if clean[24].get_links() == [] and original[24].get_links():
