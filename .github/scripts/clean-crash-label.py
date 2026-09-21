@@ -58,7 +58,6 @@ def rewrite(text, path):
     text = OLD.sub('Crash Game', text)
     if path.suffix.lower() not in {'.html', '.js', '.mjs'}:
         return text
-    # Keep the existing PDF address, but refresh browser links, not source paths.
     text = re.sub(r'(Cow_and_Aliens_Test_Presentation\.pdf)(?:\?v=[^\s\"\'<>]*)?', r'\1?v=' + VERSION, text)
     text = text.replace('download="Cow_and_Aliens_Test_Presentation.pdf?v=' + VERSION + '"', 'download="Cow_and_Aliens_Test_Presentation.pdf"')
     for filename in ('site.js', 'scene-player.js'):
@@ -99,7 +98,6 @@ def apply():
         raise RuntimeError('The inspected two-line cover title was not found.')
     for span in title_spans:
         page.add_redact_annot(fitz.Rect(span['bbox']), fill=False, cross_out=False)
-    # Remove only text: no image deletion, recoloring, or vector deletion.
     page.apply_redactions(images=0, graphics=0, text=0)
     font = '/usr/share/fonts/opentype/urw-base35/URWBookman-Demi.otf'
     page.insert_font(fontname='CrashCover', fontfile=font)
@@ -114,6 +112,10 @@ def apply():
     xml = doc.get_xml_metadata()
     if xml:
         doc.set_xml_metadata(OLD.sub('Crash Game', xml))
+    # Update bookmark labels only, keeping page destinations and navigation intact.
+    for index, item in enumerate(doc.get_toc()):
+        if OLD.search(item[1]):
+            doc.set_toc_item(index, title=OLD.sub('Crash Game', item[1]))
     temporary = OUT / PDF.name
     doc.save(temporary, garbage=4, deflate=True)
     doc.close()
@@ -126,7 +128,6 @@ def apply():
         if a.samples != b.samples:
             raise RuntimeError(f'Unexpected visual change on page {i + 1}.')
         unchanged.append(i + 1)
-    # The cover artwork and supporting copy are unchanged outside the title area.
     a = clean[0].get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
     b = original[0].get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
     sa, sb = a.samples_mv, b.samples_mv
@@ -161,7 +162,6 @@ def apply():
                     residual.append(p.as_posix())
     if residual:
         raise RuntimeError('Retired label remains in: ' + str(residual))
-    # Apart from the presentation, existing binary artwork must be byte-identical.
     unchanged_art = 0
     for p in paths:
         if p.suffix.lower() in {'.png','.jpg','.jpeg','.webp','.svg','.ttf','.woff','.woff2','.mp4'}:
@@ -209,7 +209,7 @@ def verify_live():
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
         f.write('## Crash-label cleanup complete\n\n')
         f.write(f"Updated and verified {report['live_files_verified']} live files. No retired-label matches remain.\n\n")
-        f.write('The 25-page PDF has a neutral cover and metadata. Pages 2–25 are pixel-identical to the prior presentation. All artwork and game screens are preserved.\n')
+        f.write('The 25-page PDF has a neutral cover, metadata and bookmarks. Pages 2–25 are pixel-identical to the prior presentation. All artwork and game screens are preserved.\n')
 
 
 if __name__ == '__main__':
