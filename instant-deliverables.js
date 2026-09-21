@@ -2,7 +2,7 @@
 const A = '/game-art-review/assets/instant-final/';
 const H = section => '/game-art-review/instant/?section=' + section;
 const esc = value => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
-const PDF = A + 'downloads/Pirate_Sea_Hop_Test_Presentation.pdf?v=20260922-matched-25';
+const PDF = A + 'downloads/Pirate_Sea_Hop_Test_Presentation.pdf?v=20260922-final-review';
 const evidence = [
   ['brief', 'Concept &amp; brief', 'Idea, theme, audience and differentiation'],
   ['art-direction', 'Art direction', 'Nine approved references and visual principles'],
@@ -17,13 +17,13 @@ export function renderInstantDeliverables(manifest) {
   const figma = esc(manifest.figma);
   return `<article class="case-chapter instant-deliverables">
     <p class="art-kicker">09 / DELIVERABLES</p>
-    <h1>What is ready. What remains.</h1>
-    <p class="intro">Review evidence is available in this website. The assignment’s final submission format is a Figma presentation and a matching PDF.</p>
+    <h1>Presentation &amp; source files.</h1>
+    <p class="intro">Start with the 25-page presentation, then inspect the Figma source and full-size game screens. The website provides a chapter-by-chapter view of the concept, artwork and proposed production plan.</p>
     <div class="submission-grid">
       <section class="submission-card" id="figma">
         <span class="status">Available</span>
         <h2>Figma presentation</h2>
-        <p>Instant game presentation. This link opens the specific game section supplied with the final screen exports.</p>
+        <p>Open the Pirate Sea Hop design section in Figma. The link opens in a separate tab.</p>
         <div class="preview-actions">
           <a class="link-button primary" href="${figma}" target="_blank" rel="noopener noreferrer">Open Instant game in Figma ↗</a>
           <button class="link-button" type="button" id="copy-figma">Copy Figma link</button>
@@ -47,7 +47,7 @@ export function renderInstantDeliverables(manifest) {
         <a href="${A}downloads/Instant_Mobile.pdf" target="_blank" rel="noopener"><strong>Mobile · all game states ↗</strong><span>Original Figma export · 10 screens</span></a>
         <a href="${A}downloads/Instant_Web.pdf" target="_blank" rel="noopener"><strong>Desktop · all game states ↗</strong><span>Original Figma export · 10 screens</span></a>
       </div>
-      <div class="next-links"><a class="link-button" href="${H('final-ui')}">Browse all 20 screens</a></div>
+      <div class="next-links"><a class="link-button" href="${H('states')}">Browse all 20 screens</a></div>
     </section>
     <section>
       <h2>Available review evidence</h2>
@@ -63,18 +63,15 @@ export function renderInstantDeliverables(manifest) {
       </div>
     </section>
     <section>
-      <h2>Production handoff still required</h2>
-      <div class="table-wrap"><table><thead><tr><th>Package</th><th>Current evidence</th><th>Remaining work</th></tr></thead><tbody>
+      <h2>From test concept to production</h2>
+      <div class="table-wrap"><table><thead><tr><th>Package</th><th>Current evidence</th><th>Planned production work</th></tr></thead><tbody>
         <tr><td>Source illustration</td><td>Approved character boards, environment and encounter poses</td><td>Editable sources, separated layers and reconstructed hidden areas</td></tr>
         <tr><td>Spine animation</td><td>Jump and encounter poses, combined tentacles and proposed timings</td><td>Continuous rigs, landing pivots, motion events, reset and runtime exports</td></tr>
         <tr><td>Interface handoff</td><td>20 final mobile/desktop screens and written state behavior</td><td>Native components, confirmed values, pending/error states and reconnect behavior</td></tr>
-        <tr><td>Submission</td><td>This review website, 25-page presentation and production plan</td><td>Verify reviewer access to the supplied Figma section; Figma content is unchanged</td></tr>
+
       </tbody></table></div>
     </section>
-    <section class="review-note">
-      <h2>Before submitting</h2>
-      <ul><li>Keep the PDF and Figma aligned in story and state order.</li><li>Review the main mobile and desktop screens at readable scale.</li><li>Keep reference sources separate from original project artwork.</li><li>Label estimates and unfinished production work honestly.</li><li>Check Figma access from a reviewer’s account.</li></ul>
-    </section>
+    <section class="review-note"><h2>Review guide</h2><p>The presentation covers the assignment; the screen exports preserve the original artwork. Motion previews and timings communicate intent. The production plan describes the next phase, including layered assets, Spine animation and engineering handoff.</p></section>
     <div class="next-links"><a class="link-button" href="#source-assets">Inspect source files</a><a href="${H('states')}">Read UI state requirements</a></div>
   </article>`;
 }

@@ -1,7 +1,7 @@
 /* Reviewer workspace, adapted from the selected 12ui root and Instant exports.
    Native links and flow layout replace image-export positioning; evidence stays factual. */
 (async function () {
-  const {sections, references} = await import('/game-art-review/review-data.js');
+  const {sections, references} = await import('/game-art-review/review-data.js?v=20260922-final-review');
   const path = location.pathname.replace(/^\/game-art-review(?:\/|$)/, '/').split('/').filter(Boolean)[0] || 'brief';
   const instant = path === 'instant';
   const query = new URLSearchParams(location.search);
@@ -32,13 +32,13 @@
   const status = s => '<span class="status ' + (s === 'Pending' ? 'pending' : '') + '">' + s + '</span>';
   const displayControls = '<div class="segmented" role="group" aria-label="Game display mode"><button data-display="color" aria-pressed="true">Color</button><button data-display="grayscale" aria-pressed="false">Grayscale</button></div>';
   function artDirection() {
-    content.innerHTML = heading('02 / ART DIRECTION', 'Ink, character & a little chaos.', 'Six supplied references. One consistent visual language for the crash game.') +
+    content.innerHTML = heading('02 / ART DIRECTION', 'Ink, character & a little chaos.', 'Six selected references. One consistent visual language for the crash game.') +
       '<div class="board-jumps"><a href="#reference-board">References</a><a href="#principles">Visual principles</a><a href="#palette">Game palette</a><a href="#typography">Typography</a></div>' +
       '<section id="reference-board"><div class="section-heading"><div><h2>The reference board</h2><p class="caption">Full compositions, consistent framing, no cropped signatures.</p></div><div class="segmented" role="group" aria-label="Reference treatment"><button data-treatment="harmonized" aria-pressed="true">Harmonized</button><button data-treatment="original" aria-pressed="false">Originals</button></div></div>' +
       '<div class="reference-grid harmonized">' + references.map((r,i) => '<figure class="reference-card"><a class="reference-art" href="/game-art-review/assets/references/' + r.file + '" target="_blank" rel="noopener" aria-label="Open original: ' + r.title + '"><img src="/game-art-review/assets/references/' + r.file + '" alt="' + r.alt + '" loading="' + (i < 2 ? 'eager' : 'lazy') + '"></a><figcaption><span class="ref-index">REFERENCE ' + String(i+1).padStart(2,'0') + '</span><h3>' + r.title + '</h3><p>' + r.note + '</p><a href="/game-art-review/assets/references/' + r.file + '" target="_blank" rel="noopener">Original · ' + r.source + ' ↗</a></figcaption></figure>').join('') + '</div><p class="board-note" id="treatment-note" aria-live="polite">Harmonized view: a reversible monochrome/soft-contrast display treatment. Original files and visible signatures are unchanged. References are not original project artwork; authorship is not asserted.</p></section>' +
       '<section id="principles"><h2>What we take into the game</h2><div class="principles"><section><span class="section-number">01</span><h3>Silhouette first</h3><p>Bold contours, separated limbs and a readable hand-to-leg grip. Test the connected cast at mobile size.</p></section><section><span class="section-number">02</span><h3>Stage the story</h3><p>Keep the five-second setup at bottom-left. Leave the center clear for the multiplier and the upper-right open for flight.</p></section><section><span class="section-number">03</span><h3>Texture with restraint</h3><p>Print character belongs in the art, not across UI labels. Amounts, primary actions and receipts stay crisp.</p></section></div></section>' +
       '<section id="palette"><h2>A quiet field. Warm light.</h2><p>These colors belong to the game. The neutral review website gives the artwork room to speak.</p><div class="palette-grid">' + [['#083848','Night sky'],['#193A35','Pasture'],['#F9E6B4','Cream light'],['#D8D790','Tractor beam'],['#BF7652','Barn & leather'],['#10151A','Ink']].map(c => '<div class="swatch"><div style="background:' + c[0] + '"></div><strong>' + c[1] + '</strong><code>' + c[0] + '</code></div>').join('') + '</div></section>' +
-      '<section id="typography"><h2>Big numbers. Clear decisions.</h2><div class="type-direction"><div class="type-specimen"><div class="type-number">2.48×</div><div class="type-round">ROUND LIVE</div><small>Live type · Caprasimo</small></div><div><h3>A rounded, heavy display voice</h3><p>Caprasimo brings the broad curves and weight of your supplied reference into editable live text. Cream fill, a dark outline and a short offset shadow keep it readable.</p><p>This is a close stylistic match, not a claim to have identified the exact reference font. Controls keep their simpler interface type.</p><a class="text-link" href="/game-art-review/assets/references/07-type-reference.jpg" target="_blank" rel="noopener">Inspect your supplied type reference ↗</a><div class="next-links"><a class="link-button" href="/game-art-review/desktop/">Test color / grayscale</a></div></div></div></section>';
+      '<section id="typography"><h2>Big numbers. Clear decisions.</h2><div class="type-direction"><div class="type-specimen"><div class="type-number">2.48×</div><div class="type-round">ROUND LIVE</div><small>Live type · Caprasimo</small></div><div><h3>Final lettering and live prototype type</h3><p>The final Figma screens define the display lettering. The interactive prototype uses Caprasimo as an editable stand-in, with a cream fill, dark outline and short offset shadow.</p><p>Use the final artwork as the authority for the production lettering; confirm the editable font or glyph assets at handoff. Controls use simpler interface type for legibility.</p><a class="text-link" href="/game-art-review/assets/references/07-type-reference.jpg" target="_blank" rel="noopener">Inspect the lettering reference ↗</a><div class="next-links"><a class="link-button" href="/game-art-review/desktop/">Test color / grayscale</a></div></div></div></section>';
     content.querySelectorAll('[data-treatment]').forEach(b => b.onclick = () => {
       const tone = b.dataset.treatment === 'harmonized';
       content.querySelector('.reference-grid').classList.toggle('harmonized',tone);
@@ -47,7 +47,7 @@
     });
   }
   async function instantPage() {
-    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260922-motion-tentacles-v1');
+    const {renderInstant} = await import('/game-art-review/instant-review.js?v=20260922-final-review');
     await renderInstant({content,active,heading,wireDisplay});
   }
   function wireDisplay() {
@@ -112,9 +112,9 @@
       ['Setup sequence','/game-art-review/animation/','Six key poses; desktop and mobile','Spine Animator','Timed preview','Continuous motion, crash release, reset and export validation.'],
       ['Game interface','/game-art-review/final-ui/','Final desktop and mobile Figma screens','UI Designer','Available','Verify component structure and production measurements in the linked Figma file.'],
       ['Control states','/game-art-review/states/','29 final desktop and mobile screen exports','UI Designer','Available','Check final wallet/server events during integration.'],
-      ['Submission','/game-art-review/deliverables/#figma','Linked Figma section, final screen PDFs and review presentation','Art Lead','Available','Align the full presentation PDF with the final Figma file and verify reviewer access.']
+      ['Submission','/game-art-review/deliverables/#figma','Linked Figma section, final screen PDFs and review presentation','Art Lead','Available','Production follow-up: maintain source components and exports as the implementation evolves.']
     ];
-    content.innerHTML = heading('ASSETS & OBJECTS', 'Nothing hidden from review.', 'Inspect each object, its current evidence and the work still needed for production.') +
+    content.innerHTML = heading('ASSETS & OBJECTS', 'Assets and production responsibilities.', 'Inspect each object, its current evidence and the work still needed for production.') +
       '<div class="inventory-list">' + rows.map((r,i) => '<article class="inventory-row"><span class="evidence-number">' + String(i+1).padStart(2,'0') + '</span><div><h2><a href="' + r[1] + '">' + r[0] + ' ↗</a></h2><p>' + r[2] + '</p><p class="remaining"><strong>Next:</strong> ' + r[5] + '</p></div><div class="inventory-meta">' + status(r[4]) + '<small>' + r[3] + '</small></div></article>').join('') + '</div>';
   }
   if(instant)await instantPage();
@@ -123,7 +123,7 @@
   else if(active === 'components')inventory();
   else {
     try {
-      const response = await fetch('/game-art-review/' + active + '-content.html?v=20260922-crash-figma-new-tab-v2', {cache:'no-cache'});
+      const response = await fetch('/game-art-review/' + active + '-content.html?v=20260922-final-review', {cache:'no-cache'});
       if(!response.ok)throw new Error('Page unavailable');
       content.innerHTML = await response.text();
       const kicker = content.querySelector('.art-kicker');

@@ -24,7 +24,7 @@ export const evidence = [
   {title:'Style & visual principles',detail:'Six references, color logic and type treatment',href:'/game-art-review/art-direction/',status:'Available'},
   {title:'Main game screen',detail:'Desktop and mobile hierarchy, UI and usability',href:'/game-art-review/final-ui/',status:'Prototype'},
   {title:'Task breakdown & milestones',detail:'Deliverables, dependencies and review gates',href:'/game-art-review/production/#milestones',status:'Proposed'},
-  {title:'Team workload & timeline',detail:'UI, 2D art and Spine effort across 15 working days',href:'/game-art-review/production/#workload',status:'Proposed'},
+  {title:'Team workload & timeline',detail:'UI, 2D art and Spine effort across 20 working days',href:'/game-art-review/production/#workload',status:'Proposed'},
   {title:'Risks & mitigation',detail:'Named risks, responses and responsible roles',href:'/game-art-review/production/#risks',status:'Proposed'},
   {title:'Presentation PDF & Figma',detail:'Figma game section and final screen exports',href:'/game-art-review/deliverables/#figma',status:'Available'}
 ];
