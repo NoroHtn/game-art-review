@@ -2,16 +2,21 @@
 // progress rules or timers: the controller supplies confirmed counts and the
 // shared FrameClock supplies visible elapsed time.
 export const CAULDRON_DURATIONS = Object.freeze({collect: 450, grow: 700});
-export const CAULDRON_NAMES = Object.freeze(['multi', 'collect', 'mystery']);
+export const CAULDRON_FRONT_NAMES = Object.freeze(['multi', 'collect', 'mystery']);
+export const CAULDRON_NAMES = Object.freeze([...CAULDRON_FRONT_NAMES, 'super']);
 const COLORS = Object.freeze({
  multi: {light: 0xc956ff, bright: 0xf5caff},
  collect: {light: 0x32b9ff, bright: 0xd0f4ff},
  mystery: {light: 0xff4132, bright: 0xffddd0},
+ super: {light: 0xbcdcff, bright: 0xffffff},
 });
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
-const countValue = value => clamp(Math.floor(Number.isFinite(Number(value)) ? Number(value) : 0), 0, 9);
-export const cauldronTier = count => countValue(count) < 4 ? 0 : countValue(count) < 7 ? 1 : 2;
-const out = k => 1 - (1 - k) ** 3;
+const countValue = (value, name = 'multi') => clamp(Math.floor(Number.isFinite(Number(value)) ? Number(value) : 0), 0, name === 'super' ? 27 : 9);
+export const cauldronTier = (count, name = 'multi') => countValue(count, name) < (name === 'super' ? 9 : 4) ? 0 : countValue(count, name) < (name === 'super' ? 18 : 7) ? 1 : 2;
+const smooth = k => k * k * (3 - 2 * k);
+// A weighted intake and one unhurried settle. Both ends have zero slope, so
+// Collect can be added to the continuously running Idle without a pose snap.
+const intake = k => k <= .32 ? smooth(k / .32) : 1 - smooth((k - .32) / .68);
 const round = value => Math.round(value * 1000) / 1000;
 
 export class CauldronAnimator {
@@ -36,7 +41,8 @@ export class CauldronAnimator {
    this.pots[name] = {name, index, view, body, host, liquid, rim, particles,
     base: {x: body.x, y: body.y, scaleX: body.scale.x, scaleY: body.scale.y, rotation: body.rotation || 0},
     state: 'Idle', clip: 'idle_0', tier: 0, count: 0, displayCount: 0, targetCount: 0,
-    current: null, queue: [], received: 0, completed: 0, cancelled: 0, events: []};
+    current: null, queue: [], received: 0, completed: 0, cancelled: 0, events: [],
+    smokeUpdates: 0, renderState: {reaction: 0, grow: 0, intensity: 0, time: 0}};
   }
   scene.cauldronAnimator = this;
   this.sync(scene.potLevels || {}, {immediate: true});
@@ -59,6 +65,7 @@ export class CauldronAnimator {
  applyTier(pot, tier) {
   const next = clamp(tier, 0, 2), texture = this.scene.texture(this.scene.url(`cauldron_${pot.name}_${next}`));
   pot.tier = next; pot.view.level = next; pot.view.sprite.texture = texture;
+  pot.view.smokeRig?.setTexture?.(texture, next);
   this.scene.layoutPot(pot.view);
  }
 
@@ -67,14 +74,18 @@ export class CauldronAnimator {
  // Initial load, reset and explicit recovery use immediate:true.
  sync(levels = {}, {immediate = false} = {}) {
   if (this.destroyed) return this;
+  const supplied = {...levels};
+  if (CAULDRON_FRONT_NAMES.some(name => name in levels)) {
+   supplied.super = CAULDRON_FRONT_NAMES.reduce((sum, name) => sum + countValue(levels[name] ?? this.pots[name].targetCount, name), 0);
+  }
   for (const name of CAULDRON_NAMES) {
-   if (!(name in levels)) continue;
-   const pot = this.pots[name], count = countValue(levels[name]);
+   if (!(name in supplied)) continue;
+   const pot = this.pots[name], count = countValue(supplied[name], name);
    pot.targetCount = count;
    if (!immediate) continue;
    this.cancelPending(pot, 'sync');
    pot.count = pot.displayCount = count;
-   this.applyTier(pot, cauldronTier(count));
+   this.applyTier(pot, cauldronTier(count, name));
    this.resetPose(pot);
    this.setState(pot, 'Idle', {reason: 'sync'});
   }
@@ -87,13 +98,13 @@ export class CauldronAnimator {
   if (!pot) return Promise.reject(new Error(`INVALID_CAULDRON: ${name}`));
   if (this.destroyed) return Promise.resolve({cancelled: true, reason: 'destroyed'});
   const latest = pot.queue.at(-1)?.count ?? pot.current?.count ?? pot.displayCount;
-  const count = countValue(confirmedCount === undefined ? latest + 1 : confirmedCount);
+  const count = countValue(confirmedCount === undefined ? latest + 1 : confirmedCount, name);
   pot.targetCount = Math.max(pot.targetCount, count); pot.received++;
   const event = {id: ++this.sequence, count, receivedAt: this.clock.now};
   if (this.reducedMotion) {
    pot.count = Math.max(pot.displayCount, count);
    this.setState(pot, 'Collect', {eventId: event.id, immediate: true});
-   const tier = cauldronTier(pot.count);
+   const tier = cauldronTier(pot.count, name);
    for (let next = pot.tier + 1; next <= tier; next++) {
     this.setState(pot, 'Grow', {eventId: event.id, toTier: next, immediate: true});
     this.applyTier(pot, next);
@@ -115,14 +126,14 @@ export class CauldronAnimator {
   const event = pot.queue.shift();
   if (!event) return;
   event.count = Math.max(pot.displayCount, event.count);
-  event.targetTier = cauldronTier(event.count);
+  event.targetTier = cauldronTier(event.count, pot.name);
   event.started = now; event.phase = 'Collect'; event.swapped = false;
   pot.current = event; pot.count = event.count;
   this.setState(pot, 'Collect', {eventId: event.id});
  }
  beginGrow(pot, now) {
   const event = pot.current;
-  event.phase = 'Grow'; event.started = now; event.swapped = false; event.toTier = pot.tier + 1;
+  event.phase = 'Grow'; event.started = now; event.swapped = false; event.fromTier = pot.tier; event.toTier = pot.tier + 1;
   this.setState(pot, 'Grow', {eventId: event.id, toTier: event.toTier});
  }
  finishPhase(pot, now) {
@@ -165,7 +176,8 @@ export class CauldronAnimator {
   const view = pot.view, texture = view.sprite.texture;
   const width = view.base?.artWidth || texture.width * Math.abs(view.sprite.scale.x);
   const height = view.base?.artHeight || texture.height * Math.abs(view.sprite.scale.y);
-  return {width, height, mouthX: 0, mouthY: -height * .155, rx: width * .32, ry: height * .045};
+  const superPot = pot.name === 'super';
+  return {width, height, mouthX: 0, mouthY: -height * (superPot ? .35 : .155), rx: width * (superPot ? .30 : .32), ry: height * (superPot ? .08 : .045)};
  }
  resetPose(pot) {
   const {body, base, host} = pot;
@@ -182,57 +194,64 @@ export class CauldronAnimator {
   host.position.set(x, y); host.scale.set(scaleX, scaleY); host.rotation = rotation;
  }
  clearEffects(pot) {pot.liquid.clear(); pot.rim.clear(); pot.particles.clear(); pot.host.visible = false;}
+ driveSmoke(pot, now, values) {
+  const rig = pot.view.smokeRig;
+  if (!rig?.update) return;
+  const {body} = pot;
+  rig.update({time: now, tier: pot.tier, phase: pot.state, ...values,
+   bodyPose: {x: body.x, y: body.y, scaleX: body.scale.x, scaleY: body.scale.y, rotation: body.rotation}});
+  pot.smokeUpdates++;
+ }
  render(pot, now) {
   if (pot.body.destroyed || pot.host.destroyed) return;
-  if (this.reducedMotion) {this.resetPose(pot); this.clearEffects(pot); return;}
-  const d = this.dimensions(pot), tier = pot.tier, phase = now / (1900 - tier * 120) + pot.index * 1.67;
-  let scaleX = 1, scaleY = 1, y = 0, rotation = 0;
-  let light = .055 + tier * .025 + Math.sin(phase * 1.3) * .015;
-  let bubbleBoost = 0, reaction = 0, burst = -1;
-  const event = pot.current;
-  if (!event) {
-   const breath = Math.sin(phase) * (.0016 + tier * .0008);
-   scaleX += breath; scaleY -= breath * .55;
-   y = Math.sin(phase * .83) * d.height * (.0012 + tier * .0005);
-   rotation = Math.sin(phase * .72) * (.0012 + tier * .0005);
-  } else if (event.phase === 'Collect') {
-   const k = clamp((now - event.started) / CAULDRON_DURATIONS.collect, 0, 1);
-   const impact = Math.exp(-(((k - .18) / .14) ** 2)), decay = Math.exp(-k * 5);
-   scaleX += impact * .033; scaleY -= impact * .032;
-   y = d.height * .018 * impact;
-   rotation = Math.sin(k * Math.PI * 5) * decay * .016;
-   light += impact * .22; reaction = impact; bubbleBoost = impact * .28;
-   burst = clamp((k - .12) / .88, 0, 1);
-  } else {
-   const k = clamp((now - event.started) / CAULDRON_DURATIONS.grow, 0, 1), swell = Math.sin(k * Math.PI);
-   scaleX += swell * .047; scaleY += swell * .043;
-   y = -d.height * .022 * swell;
-   rotation = Math.sin(k * Math.PI * 2) * swell * .009;
-   light += swell * .25; reaction = swell; bubbleBoost = swell * .4;
-   burst = clamp((k - .28) / .72, 0, 1);
+  if (this.reducedMotion) {
+   this.resetPose(pot); this.clearEffects(pot);
+   this.driveSmoke(pot, now, {reaction: 0, grow: 0, intensity: pot.tier, reducedMotion: true});
+   pot.renderState = {reaction: 0, grow: 0, intensity: pot.tier, time: now};
+   return;
   }
-  this.pose(pot, 0, y, scaleX, scaleY, rotation);
+  const d = this.dimensions(pot), phase = now / 1900 + pot.index * 1.67;
+  const event = pot.current;
+  let intensity = pot.tier, reaction = 0, grow = 0;
+  if (event?.phase === 'Collect') {
+   reaction = intake(clamp((now - event.started) / CAULDRON_DURATIONS.collect, 0, 1));
+  } else if (event?.phase === 'Grow') {
+   const k = clamp((now - event.started) / CAULDRON_DURATIONS.grow, 0, 1);
+   grow = Math.sin(k * Math.PI) ** 2;
+   intensity = event.fromTier + (event.toTier - event.fromTier) * smooth(k);
+  }
+  // Idle never stops underneath a reaction. Only a single smooth weighted
+  // intake/swell is layered over it: no angular oscillation or rapid shake.
+  const breath = Math.sin(phase) * (.0016 + intensity * .0008);
+  const scaleX = 1 + breath + reaction * .018 + grow * .034;
+  const scaleY = 1 - breath * .55 - reaction * .021 + grow * .029;
+  const y = Math.sin(phase * .83) * d.height * (.0012 + intensity * .0005)
+   + d.height * (.009 * reaction - .014 * grow);
+  this.pose(pot, 0, y, scaleX, scaleY, 0);
+  this.driveSmoke(pot, now, {reaction, grow, intensity, reducedMotion: false});
+  pot.renderState = {reaction: round(reaction), grow: round(grow), intensity: round(intensity), time: round(now)};
   const color = COLORS[pot.name]; pot.host.visible = true;
   const liquid = pot.liquid.clear(), rim = pot.rim.clear(), particles = pot.particles.clear();
-  // Existing gold, coins and steam remain the authority. These low-alpha light
-  // ellipses and tiny particles only react around the original mouth rim.
-  liquid.ellipse(d.mouthX, d.mouthY, d.rx, d.ry).fill({color: color.light, alpha: clamp(light, 0, .35)});
-  rim.ellipse(0, d.mouthY, d.rx * (1 + reaction * .035), d.ry * (1 + reaction * .1))
-   .stroke({color: color.bright, width: Math.max(.55, d.height * .004), alpha: .07 + reaction * .36});
-  const bubbles = 2 + tier;
+  const light = .055 + intensity * .025 + Math.sin(phase * 1.3) * .015 + reaction * .14 + grow * .19;
+  // These restrained mouth accents complement the actual moving approved
+  // smoke pixels supplied by the scene rig; they do not replace the smoke.
+  liquid.ellipse(d.mouthX, d.mouthY, d.rx, d.ry).fill({color: color.light, alpha: clamp(light, 0, .32)});
+  rim.ellipse(0, d.mouthY, d.rx * (1 + reaction * .018 + grow * .025), d.ry * (1 + reaction * .065 + grow * .08))
+   .stroke({color: color.bright, width: Math.max(.55, d.height * .004), alpha: .07 + reaction * .22 + grow * .29});
+  const bubbles = 2 + Math.floor(intensity), bubbleBoost = reaction * .16 + grow * .24;
   for (let i = 0; i < bubbles; i++) {
-   const t = ((now / (2800 - tier * 240) + i * .273 + pot.index * .173) % 1 + 1) % 1;
+   const t = ((now / 2700 + i * .273 + pot.index * .173) % 1 + 1) % 1;
    const x = Math.sin(i * 9.7 + pot.index * 2.1) * d.rx * .72;
    const cy = d.mouthY - d.height * (.035 + .095 * t);
    const radius = d.height * (.006 + (i % 2) * .002) * (.65 + Math.sin(t * Math.PI) * .35);
-   const alpha = Math.sin(t * Math.PI) * (.13 + tier * .04 + bubbleBoost);
+   const alpha = Math.sin(t * Math.PI) * (.13 + intensity * .04 + bubbleBoost);
    particles.circle(x, cy, radius).stroke({color: color.bright, width: Math.max(.45, d.height * .003), alpha});
   }
-  if (burst > 0 && burst < 1) for (let i = 0; i < 7; i++) {
-   const angle = Math.PI * (.12 + i * .126), distance = d.height * (.09 + (i % 3) * .018) * out(burst);
-   const x = Math.cos(angle) * distance, cy = d.mouthY - Math.sin(angle) * distance + d.height * .07 * burst * burst;
-   const radius = Math.max(.55, d.height * .005 * (1 - burst * .65));
-   particles.circle(x, cy, radius).fill({color: i % 3 === 0 ? 0xffe5a2 : color.bright, alpha: (1 - burst) * .65});
+  const wave = reaction > 0 ? reaction : grow;
+  if (wave > 0) for (let i = 0; i < 5; i++) {
+   const angle = Math.PI * (.16 + i * .17), distance = d.height * (.06 + (i % 3) * .012) * wave;
+   const x = Math.cos(angle) * distance, cy = d.mouthY - Math.sin(angle) * distance;
+   particles.circle(x, cy, Math.max(.55, d.height * .0045)).fill({color: i % 3 === 0 ? 0xffe5a2 : color.bright, alpha: wave * .4});
   }
  }
 
@@ -261,7 +280,8 @@ export class CauldronAnimator {
   for (const pot of Object.values(this.pots)) {
    this.cancelPending(pot, 'stop');
    pot.count = pot.displayCount = pot.targetCount;
-   this.applyTier(pot, cauldronTier(pot.count)); this.resetPose(pot); this.clearEffects(pot);
+   this.applyTier(pot, cauldronTier(pot.count, pot.name)); this.resetPose(pot); this.clearEffects(pot);
+   this.driveSmoke(pot, this.clock.now, {reaction: 0, grow: 0, intensity: pot.tier, reducedMotion: true});
    this.setState(pot, 'Idle', {reason: 'stop'});
   }
  }
@@ -270,7 +290,8 @@ export class CauldronAnimator {
    pots: Object.fromEntries(Object.values(this.pots).map(pot => [pot.name, {
     state: pot.state, clip: pot.clip, tier: pot.tier, count: pot.count, displayCount: pot.displayCount,
     targetCount: pot.targetCount, pending: pot.queue.length + (pot.current ? 1 : 0),
-    received: pot.received, completed: pot.completed, cancelled: pot.cancelled,
+    received: pot.received, completed: pot.completed, cancelled: pot.cancelled, maxCount: pot.name === 'super' ? 27 : 9,
+    smokeUpdates: pot.smokeUpdates, smoke: pot.view.smokeRig?.snapshot?.() || null, render: {...pot.renderState},
     current: pot.current ? {id: pot.current.id, phase: pot.current.phase, count: pot.current.count,
      started: round(pot.current.started), toTier: pot.current.toTier ?? null} : null,
     pose: {x: round(pot.body.x), y: round(pot.body.y), scaleX: round(pot.body.scale.x), scaleY: round(pot.body.scale.y), rotation: round(pot.body.rotation)},

@@ -1,6 +1,7 @@
 // The active Halloween scene graph. All game artwork is drawn by PixiJS;
 // the surrounding HTML supplies layout anchors and accessible controls only.
 import { LINES } from '../game/config.js';
+import { ApprovedSmokeRig } from './approved-smoke.js?v=smoke-r2-20261028';
 
 const POT_NAMES = ['multi', 'collect', 'mystery', 'super'];
 const FRONT_POT_SCALE = 1.3;
@@ -146,6 +147,7 @@ export class HalloweenScene {
       this.pots[name] = {name, container, motionBody, animationContainer: motionBody,
         effectsContainer, fx: effectsContainer, sprite, level: 0, base: {}, baseScale: 1,
         enlargement: name === 'super' ? 1 : FRONT_POT_SCALE, x: 0, y: 0, width: 0, height: 0};
+      this.pots[name].smokeRig = new ApprovedSmokeRig({PIXI: this.PIXI, view: this.pots[name], texture: sprite.texture});
     }
     this.lineGraphics = new Graphics();
     this.lineGraphics.label = 'winning-paylines';
@@ -340,13 +342,13 @@ export class HalloweenScene {
     this.cauldronAnimator?.sync({...this.potLevels});
     const total = Object.values(this.potLevels).reduce((sum, n) => sum + n, 0);
     for (const name of POT_NAMES) {
-      if (name !== 'super' && (this.cauldronAnimator || this.pots[name]?.animationManaged)) continue;
+      if (this.cauldronAnimator || this.pots[name]?.animationManaged) continue;
       const value = name === 'super' ? total : this.potLevels[name] || 0;
       const level = name === 'super' ? value < 9 ? 0 : value < 18 ? 1 : 2 : value < 4 ? 0 : value < 7 ? 1 : 2;
       const pot = this.pots[name];
       if (!pot) continue;
       const texture = this.texture(this.url(`cauldron_${name}_${level}`));
-      if (pot.level === level && pot.sprite.texture === texture) continue;
+      if (pot.level === level && pot.artTexture === texture) continue;
       pot.level = level;
       pot.sprite.texture = texture;
       this.layoutPot(pot);
@@ -437,7 +439,10 @@ export class HalloweenScene {
 
   layoutPot(pot) {
     if (!pot?.sprite) return;
-    const texture = pot.sprite.texture;
+    const incoming = pot.sprite.texture;
+    const texture = incoming === pot.smokeRig?.bodyTexture ? pot.smokeRig.sourceTexture : incoming;
+    pot.smokeRig?.setTexture(texture, pot.level);
+    pot.artTexture = texture;
     const scale = Math.min(pot.width / texture.width, pot.height / texture.height);
     pot.sprite.scale.set(scale);
     pot.sprite.position.set(0);
@@ -445,10 +450,12 @@ export class HalloweenScene {
     const artWidth = texture.width * scale, artHeight = texture.height * scale;
     Object.assign(pot.base, {x: pot.x + pot.width / 2, y: pot.y + pot.height / 2,
       width: pot.width, height: pot.height, scale, artWidth, artHeight,
-      mouth: {x: 0, y: -.155 * artHeight, width: .64 * artWidth, height: .09 * artHeight}});
+      mouth: {x: 0, y: (pot.name === 'super' ? -.35 : -.155) * artHeight,
+        width: (pot.name === 'super' ? .6 : .64) * artWidth, height: (pot.name === 'super' ? .16 : .09) * artHeight}});
     // Layout owns this parent only. Squash, rock, smoke and grow transforms
     // live on motionBody/effectsContainer and survive a normal control update.
     pot.container.position.set(pot.base.x, pot.base.y);
+    pot.smokeRig?.resize(scale);
   }
 
   layoutBackground() {
@@ -523,6 +530,30 @@ export class HalloweenScene {
           Math.min(this.width - artHalfWidth - POT_SIDE_OVERSCAN, anchor.x + anchor.width / 2));
         pot.x = center - pot.width / 2;
         pot.y = anchor.y + anchor.height - pot.height;
+      } else {
+        const texture = pot.artTexture || pot.smokeRig?.sourceTexture || pot.sprite.texture;
+        const fronts = ['multi', 'collect', 'mystery'].map(front => this.pots[front]);
+        const frontWidth = Math.max(...fronts.map(front => front.base.artWidth));
+        const frontHeight = Math.max(...fronts.map(front => front.base.artHeight));
+        const targetWidth = Math.max(frontWidth * 1.7, frontHeight * 1.12 * texture.width / texture.height);
+        let targetHeight = targetWidth * texture.height / texture.width;
+        const subtitle = this.mount.querySelector('.wordmark span');
+        const subtitleRect = subtitle ? this.toSceneRect(subtitle.getBoundingClientRect()) : null;
+        let topGuard = subtitleRect ? subtitleRect.y + subtitleRect.height + 3 : 0;
+        const portrait = window.matchMedia('(max-width:620px), (orientation:portrait) and (max-width:1000px)').matches;
+        const jackpots = this.mount.querySelector('.jackpots');
+        if (portrait && jackpots) {
+          const jp = this.toSceneRect(jackpots.getBoundingClientRect());
+          topGuard = Math.max(topGuard, jp.y + jp.height + 3);
+        }
+        targetHeight = Math.min(targetHeight, Math.max(1, b.y - topGuard - 2));
+        pot.height = targetHeight; pot.width = targetHeight * texture.width / texture.height;
+        const floor = Math.min(...fronts.map(front => front.y + front.height));
+        pot.y = Math.max(topGuard, Math.min(pot.anchorRect.y, floor - pot.height));
+        pot.x = Math.max(POT_SIDE_OVERSCAN, Math.min(this.width - POT_SIDE_OVERSCAN - pot.width,
+          pot.anchorRect.x + pot.anchorRect.width / 2 - pot.width / 2));
+        const originalScale = Math.min(pot.anchorRect.width / texture.width, pot.anchorRect.height / texture.height);
+        pot.enlargement = pot.width / (texture.width * originalScale);
       }
       this.layoutPot(pot);
     }
@@ -567,7 +598,7 @@ export class HalloweenScene {
       pots: Object.fromEntries(Object.entries(this.pots).map(([name, pot]) => [name, {level: pot.level,
         x: round(pot.x), y: round(pot.y), width: round(pot.width), height: round(pot.height),
         enlargement: pot.enlargement, anchorRect: copy(pot.anchorRect), baseScale: pot.baseScale,
-        artWidth: round(pot.base.artWidth), artHeight: round(pot.base.artHeight)}])),
+        artWidth: round(pot.base.artWidth), artHeight: round(pot.base.artHeight), smoke: pot.smokeRig?.snapshot()}])),
       sceneGraph: {containers, sprites, masks, layers: Object.fromEntries(Object.entries(this.layers).map(([name, layer]) => [name, layer.children.length]))}};
   }
 
@@ -575,6 +606,7 @@ export class HalloweenScene {
   destroy() {
     if (this.destroyed) return; this.destroyed = true; this.ready = false;
     this.cauldronAnimator?.destroy();
+    for (const pot of Object.values(this.pots)) pot.smokeRig?.destroy();
     if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame);
     this.observer?.disconnect(); this.listeners.clear();
     window.removeEventListener('resize', this.queueResize);

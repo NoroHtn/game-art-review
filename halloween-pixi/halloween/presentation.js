@@ -45,18 +45,25 @@ export class Presentation {
   },skip);
   if(generation===this.generation){set(to);onValue(to);}
  }
- async flight(src,from,to,ms=480,skip=()=>false){
+ async flight(src,from,to,ms=480,skip=()=>false,{harmonic=false}={}){
   if(REDUCED||skip())return;
   const {PIXI}=this.scene,node=new PIXI.Sprite(this.scene.texture(src));
   const size=Math.min(64,Math.max(30,from.width*.64));
   const fit=Math.min(size/node.texture.width,size/node.texture.height);
   node.anchor.set(.5);node.scale.set(fit);node.eventMode='none';
   const x0=from.x+from.width/2,y0=from.y+from.height/2;
-  const dx=to.x+to.width/2-x0,dy=to.y+to.height/2-y0;
+  const destination=()=>typeof to==='function'?to():to;
   node.position.set(x0,y0);(this.scene.effectsLayer||this.scene.layers.effects).addChild(node);this.nodes.add(node);
   try{await this.animate(ms,k=>{
    if(destroyed(node))return;
-   node.position.set(x0+dx*k,y0+dy*k-110*4*k*(1-k));node.scale.set(fit*(.9*(1-k)**.65+.06));
+   const target=destination(),dx=target.x+target.width/2-x0,dy=target.y+target.height/2-y0;
+   // Collection glides into the mouth with zero endpoint velocity, then the
+   // vessel absorbs the arrival. Other presentation flights retain their pace.
+   const t=harmonic?k*k*k*(10+k*(-15+6*k)):k;
+   const arc=harmonic?Math.min(90,Math.max(38,Math.abs(dy)*.35)):110;
+   node.position.set(x0+dx*t,y0+dy*t-arc*4*t*(1-t));
+   node.scale.set(fit*(harmonic?1-.9*smooth(k):.9*(1-k)**.65+.06));
+   if(harmonic){node.rotation=Math.sin(k*Math.PI)*.13;node.alpha=1-smooth(Math.max(0,(k-.84)/.16));}
   },skip);}finally{this.removeNode(node);}
  }
  removeNode(node){this.nodes.delete(node);if(!destroyed(node))this.scene.destroyNode(node);}
@@ -67,9 +74,9 @@ export class Presentation {
    await this.clock.wait(i*(ordered.length>8?230:320));if(generation!==this.generation)return;
    const index=(gem.cell%3)*5+Math.floor(gem.cell/3),cell=this.scene.cells[index];
    const source=this.scene.cellRect(index),potRect=this.scene.potRect(gem.pot);
-   const target=this.scene.cauldronAnimator?.mouthRect(gem.pot)||{...potRect,height:potRect.height*.4};
+   const target=()=>this.scene.cauldronAnimator?.mouthRect(gem.pot)||{...potRect,height:potRect.height*.4};
    await this.pulse(cell.content,.04,130);if(generation!==this.generation)return;
-   await this.flight(cell.id,this.scene.cellRect(index),target,480);
+   await this.flight(cell.id,this.scene.cellRect(index),target,560,()=>false,{harmonic:true});
    if(generation!==this.generation)return;
    const reaction=onArrival(gem);this.trace('pot-arrival',{pot:gem.pot,level:gem.level});await reaction;
    const pot=this.scene.pots?.[gem.pot]||this.scene.potViews?.[gem.pot];

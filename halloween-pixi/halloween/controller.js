@@ -3,9 +3,9 @@
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
 import {createServer,enableTall3} from '../game/mock-server.js';
 import {FrameClock,ReelMotion} from './reel-motion.js';
-import {Presentation,BonusMotion} from './presentation.js?v=cauldrons-r1-20261028';
-import {createScene} from './pixi-scene.js?v=cauldrons-r1-20261028';
-import {CauldronAnimator} from './cauldron-animation.js?v=cauldrons-r1-20261028';
+import {Presentation,BonusMotion} from './presentation.js?v=smoke-r2-20261028';
+import {createScene} from './pixi-scene.js?v=smoke-r2-20261028';
+import {CauldronAnimator} from './cauldron-animation.js?v=smoke-r2-20261028';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
@@ -50,6 +50,7 @@ function controls(){
  document.body.classList.toggle('bonus-mode',!!state.bonus);$('game').dataset.phase=state.phase;
  if(state.bonus)$('board').setAttribute('aria-label',`Hold and Win: ${Object.keys(state.visibleCoins).length} locked coins of 15 cells`);
  for(const[pot,n]of Object.entries(state.pots))document.querySelector(`[data-pot="${pot}"]`).setAttribute('aria-label',`${pot}: ${n} of 9`);
+ $('super-cauldron').setAttribute('aria-label',`Large pearlescent SUPER cauldron: ${Object.values(state.pots).reduce((sum,count)=>sum+count,0)} of 27`);
  scene.setPots(state.pots);scene.setBonus(!!state.bonus);
 }
 function tone(freq=440,ms=70){if(!state.sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+ms/1000);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+ms/1000);}catch{}}
@@ -158,7 +159,14 @@ async function play(force){
   pendingHistory={kind:'spin',round:reply.round,stake,openingBalance};
   state.balance=reply.balance-reply.total;controls();phase('STOPPING');await reels.stop(reply.grid,reply.coins,{mode:state.mode,onReelStop:()=>tone(300,35)});
   state.grid=reply.grid;state.coins=reply.coins;renderGrid();reels.finish();phase('LANDED');
-  if(reply.gems.length){phase('FEATURE_COLLECT');await presentation.collect(reply.gems,gem=>{state.pots[gem.pot]=Math.min(9,state.pots[gem.pot]+1);const reaction=cauldrons.collect(gem.pot,state.pots[gem.pot]);controls();return reaction;});state.pots={...reply.pots};controls();}
+  if(reply.gems.length){phase('FEATURE_COLLECT');await presentation.collect(reply.gems,gem=>{
+   state.pots[gem.pot]=Math.min(9,state.pots[gem.pot]+1);
+   const total=Object.values(state.pots).reduce((sum,count)=>sum+count,0);
+   // The rear vessel mirrors confirmed presentation progress. It never adds a
+   // collection, value, payout or server-side feature of its own.
+   const reactions=Promise.all([cauldrons.collect(gem.pot,state.pots[gem.pot]),cauldrons.collect('super',total)]);
+   controls();return reactions;
+  });state.pots={...reply.pots};controls();}
   await baseWin(reply);if(reply.trigger)await enterBonus(reply.trigger);completeRoundHistory();
  });
  if(reply&&!reply.trigger&&!state.bonus)void lineCycle(reply,token);
