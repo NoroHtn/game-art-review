@@ -1,5 +1,5 @@
 import {FrameClock,ReelMotion} from './reel-motion.js';
-import {createScene} from './pixi-scene.js';
+import {createScene} from './pixi-scene.js?v=cauldrons-r1-20261028';
 
 const FPS=32,PER_PAGE=16,REPLY_AT=300;
 const CLIPS={normal:{mode:'normal',duration:2.5},quick:{mode:'quick',duration:2},turbo:{mode:'turbo',duration:1.5},quickstop:{mode:'normal',duration:2,quickAt:500},reduced:{mode:'normal',duration:.5,reduced:true}};

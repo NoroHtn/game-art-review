@@ -3,6 +3,8 @@
 import { LINES } from '../game/config.js';
 
 const POT_NAMES = ['multi', 'collect', 'mystery', 'super'];
+const FRONT_POT_SCALE = 1.3;
+const POT_SIDE_OVERSCAN = 6;
 const TALL = {15: [2, 0], 16: [2, 1], 17: [3, 0], 18: [3, 1], 19: [3, 2]};
 const copy = value => JSON.parse(JSON.stringify(value));
 const round = n => Math.round(n * 1000) / 1000;
@@ -132,12 +134,18 @@ export class HalloweenScene {
     }
     // Rear vessel first, then the front trio, preserving the approved composition.
     for (const name of ['super', 'multi', 'collect', 'mystery']) {
-      const container = new Container(), sprite = new Sprite(this.texture(this.url(`cauldron_${name}_0`)));
+      const container = new Container(), motionBody = new Container(), effectsContainer = new Container();
+      const sprite = new Sprite(this.texture(this.url(`cauldron_${name}_0`)));
       container.label = `cauldron-${name}`;
+      motionBody.label = `cauldron-${name}-motion`;
+      effectsContainer.label = `cauldron-${name}-effects`;
       sprite.anchor.set(.5);
-      container.addChild(sprite);
+      motionBody.addChild(sprite);
+      container.addChild(motionBody, effectsContainer);
       this.layers.pots.addChild(container);
-      this.pots[name] = {name, container, sprite, level: 0, x: 0, y: 0, width: 0, height: 0};
+      this.pots[name] = {name, container, motionBody, animationContainer: motionBody,
+        effectsContainer, fx: effectsContainer, sprite, level: 0, base: {}, baseScale: 1,
+        enlargement: name === 'super' ? 1 : FRONT_POT_SCALE, x: 0, y: 0, width: 0, height: 0};
     }
     this.lineGraphics = new Graphics();
     this.lineGraphics.label = 'winning-paylines';
@@ -327,8 +335,12 @@ export class HalloweenScene {
 
   setPots(levels = {}) {
     this.potLevels = {...this.potLevels, ...levels};
+    // The animator queues front-vessel state changes behind their confirmed
+    // collection reactions. A routine control refresh must not skip that queue.
+    this.cauldronAnimator?.sync({...this.potLevels});
     const total = Object.values(this.potLevels).reduce((sum, n) => sum + n, 0);
     for (const name of POT_NAMES) {
+      if (name !== 'super' && (this.cauldronAnimator || this.pots[name]?.animationManaged)) continue;
       const value = name === 'super' ? total : this.potLevels[name] || 0;
       const level = name === 'super' ? value < 9 ? 0 : value < 18 ? 1 : 2 : value < 4 ? 0 : value < 7 ? 1 : 2;
       const pot = this.pots[name];
@@ -351,7 +363,9 @@ export class HalloweenScene {
   updateIdle(now, enabled = true) {
     for (const [index, name] of ['multi', 'collect', 'mystery'].entries()) {
       const pot = this.pots[name];
-      if (pot) pot.sprite.y = enabled ? Math.sin(now / 1700 + index * 1.8) * .65 : 0;
+      if (pot && !this.cauldronAnimator && !pot.animationManaged) {
+        pot.motionBody.y = enabled ? Math.sin(now / 1700 + index * 1.8) * .65 : 0;
+      }
     }
   }
 
@@ -406,13 +420,18 @@ export class HalloweenScene {
     cell.x = board.x + cell.col * (cellW + gap); cell.y = board.y + cell.row * (cellH + rowGap);
     cell.width = cellW; cell.height = cell.span * cellH + (cell.span - 1) * rowGap;
     cell.container.position.set(cell.x, cell.y);
-    cell.background.texture = cell.locked ? this.lockedTexture : cell.span > 1 ? this.tallTexture : this.cellTexture;
-    cell.background.width = cellW; cell.background.height = cell.height;
+    // Keep registration and masks per cell, but the resting reel well is one
+    // uninterrupted surface: no permanent tiles, gutters or square outlines.
+    cell.background.visible = false;
     cell.mask.clear().roundRect(0, 0, cellW, cell.height, cellW < 70 ? 3 : 5).fill(0xffffff);
     const g = cell.highlight;
-    g.clear().roundRect(.5, .5, Math.max(0, cellW - 1), Math.max(0, cell.height - 1), cellW < 70 ? 3 : 5)
-      .stroke({color: cell.state.winner ? 0xffda7b : cell.state.neutral ? 0xb8a6b5 : cell.locked ? 0xf9c555 : 0x8a5bb5,
-        width: cell.state.winner ? 2 : 1, alpha: cell.state.winner || cell.state.neutral ? 1 : cell.locked ? .4 : .14});
+    g.clear();
+    g.visible = !!(cell.state.winner || cell.state.neutral || cell.locked);
+    if (g.visible) {
+      g.roundRect(.5, .5, Math.max(0, cellW - 1), Math.max(0, cell.height - 1), cellW < 70 ? 3 : 5)
+        .stroke({color: cell.state.winner ? 0xffda7b : cell.state.neutral ? 0xb8a6b5 : 0xf9c555,
+          width: cell.state.winner ? 2 : 1, alpha: cell.state.winner || cell.state.neutral ? 1 : .4});
+    }
     cell.container.alpha = cell.state.spent ? .35 : cell.state.dim ? .46 : 1;
   }
 
@@ -421,7 +440,15 @@ export class HalloweenScene {
     const texture = pot.sprite.texture;
     const scale = Math.min(pot.width / texture.width, pot.height / texture.height);
     pot.sprite.scale.set(scale);
-    pot.container.position.set(pot.x + pot.width / 2, pot.y + pot.height / 2);
+    pot.sprite.position.set(0);
+    pot.baseScale = scale;
+    const artWidth = texture.width * scale, artHeight = texture.height * scale;
+    Object.assign(pot.base, {x: pot.x + pot.width / 2, y: pot.y + pot.height / 2,
+      width: pot.width, height: pot.height, scale, artWidth, artHeight,
+      mouth: {x: 0, y: -.155 * artHeight, width: .64 * artWidth, height: .09 * artHeight}});
+    // Layout owns this parent only. Squash, rock, smoke and grow transforms
+    // live on motionBody/effectsContainer and survive a normal control update.
+    pot.container.position.set(pot.base.x, pot.base.y);
   }
 
   layoutBackground() {
@@ -484,6 +511,19 @@ export class HalloweenScene {
         if (name === 'super') Object.assign(pot, {x: potsRect.x + potsRect.width * .245, y: potsRect.y, width: potsRect.width * .51, height: portrait ? 140 : 160});
         else Object.assign(pot, {x: potsRect.x + POT_NAMES.indexOf(name) * potsRect.width / 3, y: potsRect.y + potsRect.height - frontH, width: potsRect.width / 3, height: frontH});
       }
+      pot.anchorRect = {x: pot.x, y: pot.y, width: pot.width, height: pot.height};
+      if (name !== 'super') {
+        const anchor = pot.anchorRect;
+        pot.width = anchor.width * FRONT_POT_SCALE;
+        pot.height = anchor.height * FRONT_POT_SCALE;
+        const texture = pot.sprite.texture;
+        const fit = Math.min(pot.width / texture.width, pot.height / texture.height);
+        const artHalfWidth = texture.width * fit / 2;
+        const center = Math.max(artHalfWidth + POT_SIDE_OVERSCAN,
+          Math.min(this.width - artHalfWidth - POT_SIDE_OVERSCAN, anchor.x + anchor.width / 2));
+        pot.x = center - pot.width / 2;
+        pot.y = anchor.y + anchor.height - pot.height;
+      }
       this.layoutPot(pot);
     }
     if (this.focusWins.length) this.drawLines(this.focusWins);
@@ -518,17 +558,23 @@ export class HalloweenScene {
       ready: this.ready, contextLost: this.contextLost, width: this.width, height: this.height, resolution: this.app.renderer.resolution,
       canvas: {width: this.app.canvas.width, height: this.app.canvas.height}, geometry: copy(this.geometry),
       grid: this.grid ? copy(this.grid) : null, bonus: this.bonus,
+      boardStyle: 'seamless-well', idleCellPanels: false,
       textures: [...this.textures].map(([id, texture]) => ({id, src: this.textureURLs.get(id), width: texture.width, height: texture.height})),
       cells: this.cells.map(cell => ({index: cell.index, col: cell.col, row: cell.row, id: cell.id, value: cell.value ?? null, span: cell.span,
         visible: cell.container.visible && cell.content.visible, covered: cell.covered, locked: cell.locked,
+        backgroundVisible: cell.background.visible, highlightVisible: cell.highlight.visible,
         x: round(cell.x), y: round(cell.y), width: round(cell.width), height: round(cell.height), alpha: cell.container.alpha})),
-      pots: Object.fromEntries(Object.entries(this.pots).map(([name, pot]) => [name, {level: pot.level, x: round(pot.x), y: round(pot.y), width: round(pot.width), height: round(pot.height)}])),
+      pots: Object.fromEntries(Object.entries(this.pots).map(([name, pot]) => [name, {level: pot.level,
+        x: round(pot.x), y: round(pot.y), width: round(pot.width), height: round(pot.height),
+        enlargement: pot.enlargement, anchorRect: copy(pot.anchorRect), baseScale: pot.baseScale,
+        artWidth: round(pot.base.artWidth), artHeight: round(pot.base.artHeight)}])),
       sceneGraph: {containers, sprites, masks, layers: Object.fromEntries(Object.entries(this.layers).map(([name, layer]) => [name, layer.children.length]))}};
   }
 
   destroyNode(node) { if (!node?.destroyed) node?.destroy({children: true, texture: false, textureSource: false}); }
   destroy() {
     if (this.destroyed) return; this.destroyed = true; this.ready = false;
+    this.cauldronAnimator?.destroy();
     if (this.resizeFrame !== null) cancelAnimationFrame(this.resizeFrame);
     this.observer?.disconnect(); this.listeners.clear();
     window.removeEventListener('resize', this.queueResize);

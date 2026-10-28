@@ -3,8 +3,9 @@
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
 import {createServer,enableTall3} from '../game/mock-server.js';
 import {FrameClock,ReelMotion} from './reel-motion.js';
-import {Presentation,BonusMotion} from './presentation.js';
-import {createScene} from './pixi-scene.js';
+import {Presentation,BonusMotion} from './presentation.js?v=cauldrons-r1-20261028';
+import {createScene} from './pixi-scene.js?v=cauldrons-r1-20261028';
+import {CauldronAnimator} from './cauldron-animation.js?v=cauldrons-r1-20261028';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
@@ -17,6 +18,7 @@ const bet=()=>BET_LADDER[state.betIdx],events=[];let epoch=0,autoAt=Infinity,aud
 const speedModes=['normal','quick','turbo'],roundHistory=[];
 const turboHold={pointerId:null,timer:null,active:false,restoreMode:null,suppressClick:false};
 let pendingHistory=null,lastTimeMinute=-1,graphicsAvailable=true;
+let confirmedPots={...state.pots};
 function trace(name,data={}){events.push({name,time:Math.round(clock.now),wall:Math.round(performance.now()),...data});if(events.length>1200)events.shift();const output=$('motion-trace');if(output)output.textContent=JSON.stringify(events.slice(-200));}
 function phase(name){state.phase=name;trace('phase',{phase:name});controls();}
 const scene=await createScene({mount:$('game'),boardAnchor:$('board'),potsAnchor:document.querySelector('.pots-scene'),url,fmt,artResolver:id=>url(ART[id]),onContextChange:available=>{graphicsAvailable=available;clock.last=null;if(window.__game){stopAuto();controls();status(available?'GRAPHICS RESTORED · READY TO CONTINUE':'GRAPHICS INTERRUPTED · WAITING TO RESTORE');}},onError:error=>{trace('renderer-error',{message:error.message});graphicsAvailable=false;if(window.__game){stopAuto();controls();}status('GRAPHICS INTERRUPTED · RELOAD TO CONTINUE');}}).catch(error=>{
@@ -51,6 +53,8 @@ function controls(){
  scene.setPots(state.pots);scene.setBonus(!!state.bonus);
 }
 function tone(freq=440,ms=70){if(!state.sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+ms/1000);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+ms/1000);}catch{}}
+const cauldrons=new CauldronAnimator({scene,clock,trace,reducedMotion:REDUCED});
+cauldrons.sync(state.pots,{immediate:true});
 const presentation=new Presentation({clock,scene,url,fmt,trace});
 const reels=new ReelMotion({clock,scene,artResolver:id=>url(ART[id]),fmt,reducedMotion:REDUCED,onEvent:e=>{trace(e.name,e);if(e.name==='outcome-ready')phase('SPINNING');if(e.name==='reel-decelerate'&&state.phase!=='STOPPING')phase('STOPPING');if(e.name==='reel-stop')tone(250+(e.col||0)*45,35);}});
 const bonusMotion=new BonusMotion({clock,scene,url,fmt,trace});
@@ -136,7 +140,7 @@ async function runBonus(){
 }
 async function perform(task){
  state.busy=true;state.skipLevel=0;autoAt=Infinity;const token=++epoch;presentation.clearFocus();controls();
- try{await task();}catch(error){stopAuto();trace('error',{message:error.message});console.error(error);bonusMotion.cleanup();reels.reset();presentation.cleanup();state.balance=server.balance;
+ try{await task();}catch(error){stopAuto();trace('error',{message:error.message});console.error(error);bonusMotion.cleanup();reels.reset();presentation.cleanup();state.pots={...confirmedPots};cauldrons.stop();cauldrons.sync(state.pots,{immediate:true});state.balance=server.balance;
   if(state.bonus){renderBonus(state.bonus.board);state.visibleCoins={...state.bonus.board};status('PRESENTATION INTERRUPTED · TAP RESUME');}else{pendingHistory=null;renderGrid();status(error.message==='INSUFFICIENT_FUNDS'?'INSUFFICIENT DEMO CREDITS':'ROUND INTERRUPTED · READY TO CONTINUE');}
  }finally{state.busy=false;restoreHeldSpeed();phase('IDLE');controls();if((state.auto||turboHold.active)&&!state.bonus)autoAt=clock.now+(state.lastWin?state.mode==='turbo'?250:1400:150);}
  return token;
@@ -150,11 +154,11 @@ async function play(force){
  let reply;const openingBalance=state.balance,stake=bet();
  const token=await perform(async()=>{
   phase('SPIN_UP');status('GOOD LUCK');state.lastWin=0;normalize();controls();reels.start(state.grid,{mode:state.mode,coins:state.coins});
-  const injected=force||window.__force;delete window.__force;reply=await server.spin(bet(),{force:injected});trace('spin-outcome',{round:reply.round,total:reply.total,balance:reply.balance});
+  const injected=force||window.__force;delete window.__force;reply=await server.spin(bet(),{force:injected});confirmedPots={...reply.pots};trace('spin-outcome',{round:reply.round,total:reply.total,balance:reply.balance});
   pendingHistory={kind:'spin',round:reply.round,stake,openingBalance};
   state.balance=reply.balance-reply.total;controls();phase('STOPPING');await reels.stop(reply.grid,reply.coins,{mode:state.mode,onReelStop:()=>tone(300,35)});
   state.grid=reply.grid;state.coins=reply.coins;renderGrid();reels.finish();phase('LANDED');
-  if(reply.gems.length){phase('FEATURE_COLLECT');await presentation.collect(reply.gems,gem=>{state.pots[gem.pot]=Math.min(9,state.pots[gem.pot]+1);controls();});state.pots={...reply.pots};controls();}
+  if(reply.gems.length){phase('FEATURE_COLLECT');await presentation.collect(reply.gems,gem=>{state.pots[gem.pot]=Math.min(9,state.pots[gem.pot]+1);const reaction=cauldrons.collect(gem.pot,state.pots[gem.pot]);controls();return reaction;});state.pots={...reply.pots};controls();}
   await baseWin(reply);if(reply.trigger)await enterBonus(reply.trigger);completeRoundHistory();
  });
  if(reply&&!reply.trigger&&!state.bonus)void lineCycle(reply,token);
@@ -179,7 +183,7 @@ $('celebrate').addEventListener('cancel',e=>{e.preventDefault();skipAction();});
 $('auto').onclick=()=>{if(state.bonus)return;endTurboHold();state.auto=!state.auto;autoAt=state.auto?clock.now:Infinity;controls();};
 $('speed').onclick=()=>{if(state.busy||turboHold.active)return;state.mode=speedModes[(speedModes.indexOf(state.mode)+1)%3];controls();};
 for(const[id,delta]of[['bet-down',-1],['bet-up',1]])$(id).onclick=()=>{if(state.busy||state.bonus||state.auto||turboHold.active)return;++epoch;state.betIdx=Math.max(0,Math.min(BET_LADDER.length-1,state.betIdx+delta));presentation.clearFocus();state.lastWin=0;controls();};
-$('reset').onclick=()=>{if(state.busy||state.bonus)return;stopAuto();++epoch;server=createServer();state.balance=server.balance;state.lastWin=0;state.pots={multi:0,collect:0,mystery:0};roundHistory.length=0;pendingHistory=null;renderHistory();presentation.cleanup();renderGrid();controls();$('game-menu').close();status('DEMO BALANCE RESET');};
+$('reset').onclick=()=>{if(state.busy||state.bonus)return;stopAuto();++epoch;server=createServer();state.balance=server.balance;state.lastWin=0;state.pots={multi:0,collect:0,mystery:0};confirmedPots={...state.pots};cauldrons.stop();cauldrons.sync(state.pots,{immediate:true});roundHistory.length=0;pendingHistory=null;renderHistory();presentation.cleanup();renderGrid();controls();$('game-menu').close();status('DEMO BALANCE RESET');};
 $('buy').onclick=()=>{if(state.busy||state.bonus)return;$('buy-cost').textContent=fmt(bet()*70);showDialog('purchase');};
 $('confirm-buy').onclick=async()=>{if(!graphicsAvailable||state.busy||state.bonus)return;$('purchase').close();const openingBalance=state.balance,stake=bet()*70;await perform(async()=>{phase('FEATURE_REQUEST');const seed=await server.buyBonus(bet(),70);pendingHistory={kind:'bonus',round:seed.round,stake,openingBalance};state.balance=seed.balance;controls();await enterBonus(seed,{purchased:true});completeRoundHistory();});};
 $('info').onclick=$('menu-rules').onclick=()=>showDialog('rules');$('menu').onclick=()=>showDialog('game-menu');$('history').onclick=()=>{renderHistory();showDialog('round-history');};document.querySelectorAll('dialog .close,dialog .cancel').forEach(b=>b.onclick=()=>b.closest('dialog').close());
@@ -190,7 +194,7 @@ clock.onTick(()=>{updateSessionTime();if((state.auto||turboHold.active)&&!state.
  scene.updateIdle(clock.now,state.phase==='IDLE'&&!REDUCED&&!state.bonus);
 });
 for(let id=1;id<=8;id++){const item=document.createElement('div'),im=new Image();im.src=url(ART[id]);im.alt=NAMES[id];item.append(im);const text=document.createElement('p');text.textContent=`3 / 4 / 5: ${[...SYMBOLS[id].pay].reverse().join(' / ')}×`;item.append(text);$('paytable').append(item);}
-window.__game={state,clock,reels,scene,events,server:()=>server,play,ready:false,renderer:`pixi-${scene.app.renderer.name}`,snapshot:()=>({phase:state.phase,balance:state.balance,grid:state.grid,scene:scene.snapshot()})};window.__app=scene.app;window.__buyBonus=()=>$('buy').click();
+window.__game={state,clock,reels,scene,cauldrons,events,server:()=>server,play,ready:false,renderer:`pixi-${scene.app.renderer.name}`,snapshot:()=>({phase:state.phase,balance:state.balance,grid:state.grid,scene:scene.snapshot()})};window.__app=scene.app;window.__buyBonus=()=>$('buy').click();
 renderGrid();controls();renderHistory();updateSessionTime();
 try{
  await reels.preload();
@@ -203,10 +207,10 @@ if(isQA){
  const diagnostics=document.createElement('output');diagnostics.id='pixi-diagnostics';diagnostics.hidden=true;document.body.append(diagnostics);let previous=-Infinity;
  clock.onTick(()=>{if(clock.now-previous<150)return;previous=clock.now;const gl=scene.app.renderer.gl;
   diagnostics.textContent=JSON.stringify({ready:window.__game.ready,phase:state.phase,busy:state.busy,balance:state.balance,lastWin:state.lastWin,bet:bet(),mode:state.mode,grid:state.grid,coins:state.coins,bonus:state.bonus,visibleCoins:state.visibleCoins,respins:state.respins,graphicsAvailable,
-   graphics:{type:scene.app.renderer.type,webgl:!!gl,version:gl&&!gl.isContextLost()?gl.getParameter(gl.VERSION):null,contextLost:gl?.isContextLost()||false},scene:scene.snapshot(),
+   graphics:{type:scene.app.renderer.type,webgl:!!gl,version:gl&&!gl.isContextLost()?gl.getParameter(gl.VERSION):null,contextLost:gl?.isContextLost()||false},scene:scene.snapshot(),cauldrons:cauldrons.snapshot(),
    reels:{active:reels.active,phase:reels.phase,columns:reels.columns?.map(c=>({col:c.col,q:c.q,phase:c.phase,views:c.views.map(v=>({id:v.id,y:v.container.y,sharpAlpha:v.sharp?.alpha,blurAlpha:v.blur?.alpha}))}))||[]},
    events:events.slice(-35)});
  });
- const panel=document.createElement('nav');panel.className='qa-controls';panel.setAttribute('aria-label','Presentation review');
- for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
+ const panel=document.createElement('nav');panel.className='qa-controls';panel.style.flexWrap='wrap';panel.style.maxWidth='calc(100vw - 8px)';panel.setAttribute('aria-label','Presentation review');
+ for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
 }

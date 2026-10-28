@@ -66,13 +66,14 @@ export class Presentation {
   await Promise.all(ordered.map(async(gem,i)=>{
    await this.clock.wait(i*(ordered.length>8?230:320));if(generation!==this.generation)return;
    const index=(gem.cell%3)*5+Math.floor(gem.cell/3),cell=this.scene.cells[index];
-   const source=this.scene.cellRect(index),target=this.scene.potRect(gem.pot);
+   const source=this.scene.cellRect(index),potRect=this.scene.potRect(gem.pot);
+   const target=this.scene.cauldronAnimator?.mouthRect(gem.pot)||{...potRect,height:potRect.height*.4};
    await this.pulse(cell.content,.04,130);if(generation!==this.generation)return;
-   await this.flight(cell.id,this.scene.cellRect(index),{...target,height:target.height*.4},480);
+   await this.flight(cell.id,this.scene.cellRect(index),target,480);
    if(generation!==this.generation)return;
-   onArrival(gem);this.trace('pot-arrival',{pot:gem.pot,level:gem.level});
+   const reaction=onArrival(gem);this.trace('pot-arrival',{pot:gem.pot,level:gem.level});await reaction;
    const pot=this.scene.pots?.[gem.pot]||this.scene.potViews?.[gem.pot];
-   if(pot)await this.pulse(pot.sprite||pot.container||pot,.045,300);
+   if(pot&&!this.scene.cauldronAnimator)await this.pulse(pot.sprite||pot.container||pot,.045,300);
   }));
  }
  clearFocus(){this.scene.clearFocus();}
