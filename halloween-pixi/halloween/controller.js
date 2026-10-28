@@ -3,9 +3,9 @@
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
 import {createServer,enableTall3} from '../game/mock-server.js';
 import {FrameClock,ReelMotion} from './reel-motion.js';
-import {Presentation,BonusMotion} from './presentation.js?v=smoke-r2-20261028';
-import {createScene} from './pixi-scene.js?v=smoke-r2-20261028';
-import {CauldronAnimator} from './cauldron-animation.js?v=smoke-r2-20261028';
+import {Presentation,BonusMotion} from './presentation.js?v=plumes-r3-20261028';
+import {createScene} from './pixi-scene.js?v=plumes-r3-20261028';
+import {CauldronAnimator} from './cauldron-animation.js?v=plumes-r3-20261028';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
@@ -221,4 +221,29 @@ if(isQA){
  });
  const panel=document.createElement('nav');panel.className='qa-controls';panel.style.flexWrap='wrap';panel.style.maxWidth='calc(100vw - 8px)';panel.setAttribute('aria-label','Presentation review');
  for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
+ // A review-only recording captures actual rendered frames, so a moving
+ // transform or passing state test cannot stand in for visible animation.
+ if(scene.app.canvas.captureStream&&typeof MediaRecorder!=='undefined'){
+  const record=document.createElement('button');record.textContent='Record 12s animation';panel.append(record);
+  record.onclick=async()=>{
+   record.disabled=true;record.textContent='Recording animation…';let stream,recorder,offCapture;
+   try{
+    const board=scene.geometry.board,pots=Object.values(scene.pots),left=Math.max(0,Math.min(board.x-12,...pots.map(p=>p.x))),top=Math.max(0,Math.min(...pots.map(p=>p.y))-12);
+    const right=Math.min(scene.width,Math.max(board.x+board.width+12,...pots.map(p=>p.x+p.width))),bottom=Math.min(scene.height,board.y+board.height+12);
+    const preview=document.createElement('canvas');preview.width=640;preview.height=Math.round((bottom-top)*640/(right-left)/2)*2;
+    const context=preview.getContext('2d'),capture=()=>{const source=scene.app.canvas,sx=source.width/scene.width,sy=source.height/scene.height;
+     context.clearRect(0,0,preview.width,preview.height);context.drawImage(source,left*sx,top*sy,(right-left)*sx,(bottom-top)*sy,0,0,preview.width,preview.height);};
+    capture();offCapture=clock.onTick(capture);stream=preview.captureStream(30);
+    const mime=['video/webm;codecs=vp8','video/webm','video/mp4'].find(type=>MediaRecorder.isTypeSupported(type));
+    recorder=new MediaRecorder(stream,{...(mime?{mimeType:mime}:{}),videoBitsPerSecond:1800000});
+    const chunks=[];recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};
+    const stopped=new Promise((resolve,reject)=>{recorder.onstop=resolve;recorder.onerror=reject;});
+    recorder.start(250);await clock.wait(12000);recorder.stop();await stopped;
+    const blob=new Blob(chunks,{type:recorder.mimeType}),link=document.createElement('a'),objectURL=URL.createObjectURL(blob);
+    link.href=objectURL;link.download=`halloween-cauldron-r3.${blob.type.includes('mp4')?'mp4':'webm'}`;link.textContent='Save animation review';panel.append(link);
+    link.addEventListener('click',()=>{link.hidden=true;setTimeout(()=>URL.revokeObjectURL(objectURL),1000);},{once:true});
+   }catch(error){trace('qa-recording-error',{message:error.message});}
+   finally{offCapture?.();if(recorder?.state==='recording')recorder.stop();stream?.getTracks().forEach(track=>track.stop());record.disabled=false;record.textContent='Record 12s animation';}
+  };
+ }
 }

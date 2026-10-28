@@ -1,6 +1,6 @@
 import {FrameClock,ReelMotion} from './reel-motion.js';
 import {BonusMotion} from './presentation.js';
-import {createScene} from './pixi-scene.js?v=smoke-r2-20261028';
+import {createScene} from './pixi-scene.js?v=plumes-r3-20261028';
 import {REDUCED} from '../game/config.js';
 
 const FPS=32,PER_PAGE=16,REPLY_AT=300;

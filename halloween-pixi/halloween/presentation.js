@@ -67,16 +67,47 @@ export class Presentation {
   },skip);}finally{this.removeNode(node);}
  }
  removeNode(node){this.nodes.delete(node);if(!destroyed(node))this.scene.destroyNode(node);}
+ async collectFlight(src,from,destination,potName){
+  if(REDUCED)return;
+  const {PIXI}=this.scene,coin=new PIXI.Sprite(this.scene.texture(src)),trail=new PIXI.Graphics();
+  const size=Math.min(62,Math.max(28,from.width*.55)),fit=Math.min(size/coin.texture.width,size/coin.texture.height);
+  const x0=from.x+from.width/2,y0=from.y+from.height/2,ms=680;
+  coin.anchor.set(.5);coin.scale.set(fit);coin.eventMode=trail.eventMode='none';
+  const layer=this.scene.effectsLayer||this.scene.layers.effects;layer.addChild(trail,coin);this.nodes.add(trail);this.nodes.add(coin);
+  let approached=false;
+  try{await this.animate(ms,k=>{
+   if(destroyed(coin)||destroyed(trail))return;
+   const target=destination(),x1=target.x+target.width/2,y1=target.y+target.height/2,dx=x1-x0,dy=y1-y0;
+   const lift=Math.min(88,Math.max(36,Math.abs(dy)*.19));
+   const point=p=>{
+    const t=smooth(Math.max(0,Math.min(1,p))),u=1-t;
+    return {x:u*u*u*x0+3*u*u*t*(x0+dx*.08)+3*u*t*t*(x1-dx*.08)+t*t*t*x1,
+     y:u*u*u*y0+3*u*u*t*(y0-lift)+3*u*t*t*(y1-34)+t*t*t*y1};
+   };
+   const p=point(k),consume=smooth(Math.max(0,(k-.58)/.42)),fade=1-smooth(Math.max(0,(k-.91)/.09));
+   coin.position.set(p.x,p.y);coin.scale.set(fit*(1-.74*consume));coin.rotation=Math.sin(k*Math.PI)*.16;coin.alpha=fade;
+   trail.clear();
+   // A short tapered light trace follows the real coin path. Its quiet tail
+   // carries direction without covering the approved symbol with particles.
+   for(let i=5;i>0;i--){const a=point(k-i*.016),b=point(k-(i-1)*.016),alpha=(1-i/6)*Math.sin(k*Math.PI)*fade;
+    trail.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({color:0xffc34d,width:3.2*(1-i/7),alpha:alpha*.13});
+    trail.moveTo(a.x,a.y).lineTo(b.x,b.y).stroke({color:0xfff2bc,width:1.05,alpha:alpha*.32});
+   }
+   if(!approached&&k>=1-120/ms&&k<1){approached=true;const lead=Math.max(40,ms*(1-k));
+    this.scene.cauldronAnimator?.anticipate(potName,{impactIn:lead});this.scene.cauldronAnimator?.anticipate('super',{impactIn:lead});
+   }
+  });}finally{this.removeNode(trail);this.removeNode(coin);}
+ }
  async collect(gems,onArrival){
   const generation=this.generation;
   const ordered=[...gems].sort((a,b)=>(a.cell%3)*5+Math.floor(a.cell/3)-(b.cell%3)*5-Math.floor(b.cell/3));
   await Promise.all(ordered.map(async(gem,i)=>{
-   await this.clock.wait(i*(ordered.length>8?230:320));if(generation!==this.generation)return;
+   await this.clock.wait(i*(ordered.length>8?160:210));if(generation!==this.generation)return;
    const index=(gem.cell%3)*5+Math.floor(gem.cell/3),cell=this.scene.cells[index];
    const source=this.scene.cellRect(index),potRect=this.scene.potRect(gem.pot);
    const target=()=>this.scene.cauldronAnimator?.mouthRect(gem.pot)||{...potRect,height:potRect.height*.4};
-   await this.pulse(cell.content,.04,130);if(generation!==this.generation)return;
-   await this.flight(cell.id,this.scene.cellRect(index),target,560,()=>false,{harmonic:true});
+   await this.pulse(cell.content,.018,100);if(generation!==this.generation)return;
+   await this.collectFlight(cell.id,this.scene.cellRect(index),target,gem.pot);
    if(generation!==this.generation)return;
    const reaction=onArrival(gem);this.trace('pot-arrival',{pot:gem.pot,level:gem.level});await reaction;
    const pot=this.scene.pots?.[gem.pot]||this.scene.potViews?.[gem.pot];
