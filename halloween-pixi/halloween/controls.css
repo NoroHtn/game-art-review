@@ -1,0 +1,235 @@
+/* Controls matched to the owner's 4 Pots Riches recording and Playson portrait.
+   Only layout and control presentation live here; reel/art registration is unchanged. */
+.game {
+  container-type: inline-size;
+  width: min(1280px, 100%, calc((100dvh - 450px) * 2.43));
+  min-width: 0;
+  padding: 14px 24px 10px;
+  --control-font: Arial, Helvetica, sans-serif;
+  --spin-size: clamp(110px, 13.4cqw, 180px);
+  --value-size: clamp(25px, 3.04cqw, 40px);
+  --label-size: clamp(12px, 1.48cqw, 19px);
+}
+.game-header { justify-content: center; padding: 0 0 8px; }
+.playfield {
+  display: grid;
+  grid-template-columns: 13.5% minmax(0, 1fr) 14%;
+  grid-template-rows: 1fr auto auto;
+  grid-template-areas: 'jackpots center actions' 'buy center actions' 'bar bar bar';
+  column-gap: 2%;
+  row-gap: 16px;
+  align-items: center;
+}
+.jackpots { grid-area: jackpots; align-self: end; padding-top: 0; }
+.jackpots p { margin: 2px 0 0; }
+.center { grid-area: center; width: 100%; }
+.status { height: 24px; padding-top: 12px; }
+
+.sr-only {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip-path: inset(50%); white-space: nowrap; border: 0 !important;
+}
+.controls {
+  grid-area: actions; display: flex; flex-direction: column;
+  align-self: stretch; align-items: center; justify-content: center;
+  gap: clamp(25px, 3.7cqw, 50px); height: auto;
+  padding: 130px 0 24px; margin: 0;
+}
+.controls #auto, .controls #speed, .controls #spin {
+  position: static; margin: 0; padding: 0; flex: none;
+  display: grid; place-items: center; border: 0; box-shadow: none;
+  background: none; color: #fff; border-radius: 0;
+  width: calc(var(--spin-size) * .5); height: calc(var(--spin-size) * .5);
+  font-family: var(--control-font); user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.controls button svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.controls #spin {
+  width: var(--spin-size); height: var(--spin-size);
+  border-radius: 50%; background: #ff5800; touch-action: none;
+}
+.controls .spin svg { fill: currentColor; stroke: none; }
+.controls .spin text { font: 700 17px Arial, Helvetica, sans-serif; letter-spacing: -.45px; }
+.controls .spin .spin-skip, .controls .spin .spin-auto-stop { display: none; }
+.controls .spin[data-action='skip'] .spin-idle,
+.controls .spin[data-action='resume'] .spin-idle,
+.controls .spin[data-action='auto-stop'] .spin-idle { display: none; }
+.controls .spin[data-action='skip'] .spin-skip,
+.controls .spin[data-action='resume'] .spin-skip,
+.controls .spin[data-action='auto-stop'] .spin-auto-stop { display: block; }
+.controls button:disabled { opacity: .4; }
+.controls .spin:disabled { opacity: .5; }
+.controls button:hover:not(:disabled) { filter: brightness(1.08); }
+.controls .spin:active:not(:disabled), .controls .spin[data-holding='true'] { transform: scale(.98); }
+.controls .utility[aria-pressed='true'] { box-shadow: none; color: #fff; }
+.auto-letter { fill: currentColor; opacity: .5; font: 700 52px Arial, Helvetica, sans-serif; }
+.auto-stop { display: none; fill: currentColor; }
+#auto[aria-pressed='true'] .auto-letter { display: none; }
+#auto[aria-pressed='true'] .auto-stop { display: block; }
+.speed-mark { fill: currentColor; }
+.speed-mark + .speed-mark { fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; opacity: .25; }
+#speed[data-mode='quick'] .speed-mark:nth-of-type(2),
+#speed[data-mode='turbo'] .speed-mark { opacity: 1; }
+
+.playfield > .buy {
+  grid-area: buy; position: relative; z-index: 1; display: flex; justify-content: center;
+  align-items: center; align-self: end; gap: 4px; width: 100%; height: 54px;
+  padding: 3px 5px; margin: 0 0 30px; border: 3px solid #ffd12c;
+  border-radius: 7px; background: linear-gradient(#ff8a0a, #f93900 45%, #dc2100);
+  box-shadow: inset 0 0 0 2px #ffb628, inset 0 0 7px 3px #a81500, 0 0 0 1px #954309;
+  color: #ffe75b; font: 700 clamp(21px, 2.2cqw, 30px) Georgia, 'Times New Roman', serif;
+  letter-spacing: 0; text-shadow: 1px 2px 0 #b33206, -1px -1px 0 #fff38d;
+}
+.buy svg { width: 25%; max-width: 36px; height: 70%; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(1px 2px 0 #a52600); }
+.buy svg circle { fill: currentColor; stroke: none; }
+#game[data-phase^='BONUS'] .playfield > .buy,
+#game[data-phase^='FEATURE'] .playfield > .buy { visibility: hidden; }
+
+.betting-bar {
+  grid-area: bar; display: grid; grid-template-columns: 1fr 1fr 1.25fr .95fr;
+  align-items: center; gap: 2%; margin: 0; padding: 0; border: 0;
+  background: none; color: #fff; font-family: var(--control-font);
+  min-height: 64px;
+}
+.betting-bar > div { width: auto; }
+.meter { min-width: 0; text-align: center; }
+.betting-bar .credit-meter { text-align: left; }
+.meter small { display: block; margin: 0; color: #ffffffa6; font: 700 var(--label-size)/1.05 var(--control-font); letter-spacing: 0; }
+.meter strong { display: block; margin: 0; color: #fff; font: 700 var(--value-size)/1.05 var(--control-font); font-variant-numeric: tabular-nums; letter-spacing: -.025em; white-space: nowrap; }
+.bet-pill {
+  display: grid; grid-template-columns: 1fr 2.5fr 1fr; align-items: stretch;
+  height: clamp(60px, 5.53cqw, 74px); border-radius: 999px; background: #00000045;
+  overflow: hidden;
+}
+.bet-pill > button {
+  display: grid; place-items: center; min-width: 0; padding: 0;
+  border: 0; border-radius: 0; color: #fff; background: none; box-shadow: none;
+}
+.bet-pill > button:first-child { border-right: 1px solid #ffffff0b; }
+.bet-pill > button:last-child { border-left: 1px solid #ffffff0b; }
+.bet-pill button svg { width: 70%; max-width: 48px; height: 70%; fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; }
+.bet-pill > .meter { align-self: center; }
+.bet-pill button:disabled { opacity: .25; }
+.utility-nav { display: flex; align-items: center; justify-content: flex-end; gap: clamp(7px, 1.1cqw, 16px); }
+.utility-nav > button {
+  display: grid; place-items: center; flex: none; padding: 4px;
+  width: clamp(38px, 3.8cqw, 50px); height: clamp(40px, 3.8cqw, 50px);
+  background: none; border: 0; border-radius: 0; box-shadow: none; color: #ffffffde;
+}
+.utility-nav svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.utility-nav .info-dot { fill: currentColor; stroke: none; }
+.utility-nav #history { display: none; }
+#sound .sound-on { display: none; }
+#sound[aria-pressed='true'] .sound-on { display: block; }
+#sound[aria-pressed='true'] .sound-off { display: none; }
+.session-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 6px; color: #ffffff66; font: 12px/1.2 var(--control-font); }
+.session-footer .demo-note { margin: 0 auto 0 0; color: inherit; font: inherit; letter-spacing: 0; }
+.session-footer time { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.settings-dialog { min-width: min(390px, 88vw); font-family: Arial, Helvetica, sans-serif; }
+.menu-action { display: block; width: 100%; padding: 15px 18px; margin: 10px 0; border: 1px solid #ffffff24; border-radius: 7px; background: #0003; font: 600 15px Arial, Helvetica, sans-serif; text-align: left; }
+.history-table { width: 100%; border-collapse: collapse; font: 14px Arial, Helvetica, sans-serif; font-variant-numeric: tabular-nums; }
+.history-table th { padding: 12px 8px; border-bottom: 1px solid #ffffff38; font-size: 10px; color: #ffffffa6; }
+.history-table td { padding: 10px 8px; border-bottom: 1px solid #ffffff12; text-align: right; }
+.history-table th:first-child, .history-table td:first-child { text-align: left; }
+
+/* Portrait follows the separate mobile reference, with one set of live controls. */
+@media (max-width: 620px), (orientation: portrait) and (max-width: 1000px) {
+  .game {
+    width: min(620px, 100%); padding: 4px 13px 4px; justify-content: center;
+    --spin-size: clamp(84px, 23.23cqw, 144px);
+    --value-size: clamp(24px, 7.1cqw, 44px);
+    --label-size: clamp(11px, 3.23cqw, 20px);
+  }
+  .game-header { padding: 0 2px 2px; }
+  .wordmark h1 { font-size: clamp(28px, 8.5cqw, 42px); }
+  .wordmark small { font-size: 8px; }
+  .wordmark span { font-size: 9px; }
+  .playfield {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: 'jackpots jackpots' 'center center' 'buy buy' 'win win' 'actions actions' 'stake stake' 'credit utilities';
+    gap: 0; width: 100%;
+  }
+  .jackpots { display: flex; width: 100%; gap: 5px; padding: 10px 0 0; }
+  .jackpots .jp { flex: 1; padding: 8px 2px 4px; border-radius: 5px; }
+  .jackpots .jp small { font-size: clamp(7px, 1.9cqw, 10px); letter-spacing: .07em; }
+  .jackpots .jp strong { font-size: clamp(12px, 3.4cqw, 20px); }
+  .jackpots .jp::before { font-size: 8px; top: -6px; }
+  .jackpots p { display: none; }
+  .pots-scene { height: 200px; margin-top: 4px; }
+  .super-pot { width: 51%; max-width: 205px; height: 140px; }
+  .pots-scene .pots { height: 115px; padding: 0; gap: 0; }
+  .pots-scene .pot { width: 33%; }
+  .pots-scene .pot img { height: 115px; }
+  .status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  .playfield > .buy {
+    justify-self: center; width: 38%; min-width: 136px;
+    height: clamp(38px, 10cqw, 62px); margin: 3px 0 0; padding: 2px 4px;
+    font-size: clamp(24px, 6.6cqw, 40px); border-width: 2px; border-radius: 5px;
+  }
+  .buy svg { max-width: 40px; }
+  .controls {
+    display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; justify-items: center;
+    justify-self: center; width: 76%; height: var(--spin-size);
+    padding: 0; margin: 4px 0 5px; gap: 0;
+  }
+  .controls #speed { grid-column: 1; grid-row: 1; width: calc(var(--spin-size) * .61); height: calc(var(--spin-size) * .61); }
+  .controls #spin { grid-column: 2; grid-row: 1; }
+  .controls #auto { grid-column: 3; grid-row: 1; width: calc(var(--spin-size) * .65); height: calc(var(--spin-size) * .65); }
+  .betting-bar { display: contents; }
+  .win-meter { grid-area: win; text-align: center; padding-top: 2px; }
+  .credit-meter { grid-area: credit; align-self: end; padding-bottom: 3px; }
+  .betting-bar > .bet-pill { grid-area: stake; justify-self: center; width: 53.1%; min-width: 198px; height: clamp(44px, 11.61cqw, 72px); }
+  .bet-pill button svg { width: 76%; height: 76%; }
+  .utility-nav { grid-area: utilities; align-self: end; justify-self: end; gap: 0; height: 44px; }
+  .utility-nav > button { display: grid; width: clamp(38px, 11.2cqw, 66px); height: clamp(44px, 9cqw, 54px); padding: 7px; }
+  .utility-nav #history { display: grid; }
+  .session-footer { margin-top: 1px; gap: 6px; font-size: clamp(8px, 2.1cqw, 12px); }
+  .session-footer .demo-note { margin-left: auto; }
+  .session-footer time { margin-left: 3px; }
+}
+
+@media (max-width: 360px) and (max-height: 800px) {
+  .game-header .wordmark h1 { font-size: 26px; margin: 3px 0; }
+  .jackpots { padding-top: 6px; }
+  .jackpots .jp { padding-top: 5px; }
+  .pots-scene { height: 155px; }
+  .super-pot { height: 120px; }
+  .pots-scene .pots, .pots-scene .pot img { height: 105px; }
+}
+
+/* The landscape controls stay reachable when the browser is short. */
+@media (max-height: 700px) and (min-width: 621px) and (orientation: landscape) {
+  .game {
+    width: min(1100px, 100%, calc((100dvh - 224px) * 1.667 + 250px));
+    min-width: 0; padding: 4px 14px;
+    --spin-size: clamp(66px, 11cqw, 105px);
+    --value-size: clamp(19px, 3cqw, 29px);
+    --label-size: clamp(9px, 1.45cqw, 13px);
+  }
+  .game-header { padding: 0 0 3px; }
+  .wordmark h1 { font-size: 26px; margin: 0; }
+  .wordmark small { display: none; }
+  .wordmark span { font-size: 7px; }
+  .playfield { grid-template-columns: 100px minmax(0, 1fr) 100px; gap: 6px 12px; }
+  .pots-scene { height: 80px; }
+  .super-pot { height: 69px; max-width: 110px; top: -6px; }
+  .pots-scene .pots, .pots-scene .pot img { height: 58px; }
+  .pots-scene .pot { max-width: 100px; }
+  .jackpots { gap: 5px; padding-top: 0; }
+  .jackpots .jp { padding: 3px; border-radius: 5px; }
+  .jackpots .jp small { font-size: 7px; }
+  .jackpots .jp strong { font-size: 15px; }
+  .jackpots p { display: none; }
+  .playfield > .buy { height: 32px; font-size: 18px; margin-bottom: 18px; border-width: 2px; }
+  .controls { padding: 35px 0 15px; gap: 15px; }
+  .controls #auto, .controls #speed { width: 44px; height: 44px; }
+  .status { height: 16px; padding-top: 6px; font-size: 7px; }
+  .betting-bar { min-height: 44px; grid-template-columns: 1fr 1fr 1.25fr 1fr; gap: 2%; }
+  .bet-pill { height: 44px; }
+  .utility-nav { gap: 0; }
+  .utility-nav > button { width: 34px; height: 40px; padding: 4px; }
+  .session-footer { font-size: 9px; margin-top: 2px; }
+}

@@ -1,0 +1,35 @@
+/* The HTML geometry remains the approved responsive layout. Pixi owns the
+   background, cauldrons, reel frame, symbols, values, masks and game effects. */
+.game.pixi-game { position: relative; isolation: isolate; }
+.pixi-stage { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.pixi-stage canvas { display: block; width: 100%; height: 100%; pointer-events: none; touch-action: auto; }
+.pixi-game .game-header,
+.pixi-game .jackpots,
+.pixi-game .controls,
+.pixi-game .playfield > .buy,
+.pixi-game .betting-bar,
+.pixi-game .betting-bar > *,
+.pixi-game .session-footer { position: relative; z-index: 2; }
+.pixi-game .center { position: relative; z-index: 1; }
+.pixi-game .board-wrap { background: transparent; border-color: transparent; box-shadow: none; }
+.pixi-game .board { background: transparent; }
+.pixi-game .line-overlay { display: none; }
+.pixi-game .pots-scene .super-pot,
+.pixi-game .pots-scene .pot-art,
+.pixi-game .pots-scene .pot img { visibility: hidden; pointer-events: none; }
+.pixi-game .pot-art { display: block; width: 100%; height: 145px; }
+.pixi-game #bonus-banner { z-index: 3; }
+.pixi-game .status { position: relative; z-index: 2; }
+/* Leave room for the native session footer at desktop heights. */
+@media (min-width: 1001px) and (min-height: 701px) and (orientation: landscape) {
+  .game.pixi-game { width: min(1280px, 100%, calc((100dvh - 458px) * 2.43)); }
+}
+@media (max-width: 620px), (orientation: portrait) and (max-width: 1000px) {
+  .pixi-game .pot-art { height: 115px; }
+}
+@media (max-width: 360px) and (max-height: 800px) {
+  .pixi-game .pot-art { height: 105px; }
+}
+@media (max-height: 700px) and (min-width: 621px) and (orientation: landscape) {
+  .pixi-game .pot-art { height: 58px; }
+}
