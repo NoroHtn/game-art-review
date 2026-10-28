@@ -138,7 +138,7 @@ export class ApprovedSmokeRig{
    this.bodyTexture=this.textureFromPixels(extracted.body,this.width,this.height);this.view.sprite.texture=this.bodyTexture;
    this.mouthSprite=new Sprite(this.textureFromPixels(extracted.mouth,this.width,this.height));this.layer.addChild(this.mouthSprite);
    extracted.parts.forEach((pixels,stream)=>{const part=this.textureFromPixels(pixels,this.width,this.height);for(let copy=0;copy<2;copy++){
-    const node=new Container(),sprite=new Sprite(part);node.pivot.set(256,177);node.addChild(sprite);this.layer.addChild(node);this.wisps.push({node,sprite,stream,copy});
+    const node=new Container(),sprite=new Sprite(part);node.pivot.set(256,190);node.addChild(sprite);this.layer.addChild(node);this.wisps.push({node,sprite,stream,copy});
    }});
   }
   if(this.mask)this.layer.addChild(this.mask);this.resize(this.view.baseScale||1);this.update(this.last||{time:0,tier,reducedMotion:true});
@@ -153,12 +153,15 @@ export class ApprovedSmokeRig{
     node.scale.set(still?1:1.075+Math.sin(phase*.7)*.025+exhale*.018);node.rotation=still?0:Math.sin(phase*.54)*.04;node.alpha=still?(n===0?1:0):n===0?.86:.32;
    });
   }else{
-   if(this.mouthSprite){this.mouthSprite.position.set(0,still?0:inhale*4-exhale*2);this.mouthSprite.alpha=still?1:.86+inhale*.08;}
+   if(this.mouthSprite){this.mouthSprite.position.set(0,0);this.mouthSprite.alpha=still?1:.96+inhale*.04;}
    for(const{node,stream,copy}of this.wisps){
-    const period=2250+stream*170,p=fract(time/period+index*.173+stream*.283+copy*.5),fade=Math.sin(p*Math.PI)**2,drift=(4.5+intensity*.35)/Math.max(.1,this.scale||1);
-    node.position.set(256+(still?0:Math.sin(time/430+index*1.8)*drift+Math.sin(time/1430+stream*2.2)*drift*.16+Math.sin(p*Math.PI*1.6+stream)*drift*.22),
-     177+(still?0:-42*(p-.2)+inhale*9+anticipation*3-exhale*10-grow*5));
-    node.scale.set(still?1:(.91+.17*p)*(1-inhale*.035+exhale*.04),still?1:.92+.13*p);node.alpha=still?(copy===0?1:0):fade*(1.02+energy*.08);
+    const period=2250+stream*170,p=fract(time/period+index*.173+stream*.283+copy*.5),fade=Math.sin(p*Math.PI)**2;
+    // Vapor stretches and curls above a fixed mouth. Translating an entire
+    // approved plume upward would expose a cut bottom and detach it from the rim.
+    const wind=Math.sin(time/430+index*1.8)*(.20+intensity*.012)+Math.sin(time/1430+stream*2.2)*.025+Math.sin(p*Math.PI*1.6+stream)*.02;
+    node.position.set(256,190);node.skew.set(still?0:wind,0);
+    node.scale.set(still?1:(.94+.13*p)*(1-inhale*.035+exhale*.04),still?1:(.90+.28*p)*(1-inhale*.075-anticipation*.025+exhale*.065+grow*.025));
+    node.alpha=still?(copy===0?1:0):fade*(1.02+energy*.08);
    }
   }
   if(this.fade){const k=smooth((time-this.fade.start)/210);this.fade.ghost.alpha=1-k;this.layer.alpha=k;this.view.sprite.alpha=k;if(k>=1||still)this.finishFade();}
@@ -168,6 +171,6 @@ export class ApprovedSmokeRig{
  clear(){this.reset();}
  snapshot(){return{kind:this.kind,tier:this.tier,sourceWidth:this.width,sourceHeight:this.height,stats:this.stats,logicalWisps:this.view.name==='super'?1:3,sprites:this.wisps.length,
   bodyAlphaDerived:!!this.bodyTexture,bodyCropActive:!this.bodyTexture||this.view.sprite.texture===this.bodyTexture,time:this.last?.time||0,reducedMotion:!!this.last?.reducedMotion,crossfade:!!this.fade,
-  sample:this.wisps.map(({node,stream,copy})=>({stream,copy,x:round(node.x),y:round(node.y),alpha:round(node.alpha),scaleX:round(node.scale.x),scaleY:round(node.scale.y)}))};}
+  sample:this.wisps.map(({node,stream,copy})=>({stream,copy,x:round(node.x),y:round(node.y),alpha:round(node.alpha),scaleX:round(node.scale.x),scaleY:round(node.scale.y),pivotX:round(node.pivot.x),pivotY:round(node.pivot.y),skewX:round(node.skew.x)}))};}
  destroy(){if(this.destroyed)return;this.finishFade();this.clearDerived();this.layer.destroy({children:true});this.destroyed=true;}
 }

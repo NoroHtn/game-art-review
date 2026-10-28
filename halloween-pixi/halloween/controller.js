@@ -3,9 +3,9 @@
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
 import {createServer,enableTall3} from '../game/mock-server.js';
 import {FrameClock,ReelMotion} from './reel-motion.js';
-import {Presentation,BonusMotion} from './presentation.js?v=plumes-r3-20261028';
-import {createScene} from './pixi-scene.js?v=plumes-r3-20261028';
-import {CauldronAnimator} from './cauldron-animation.js?v=plumes-r3-20261028';
+import {Presentation,BonusMotion} from './presentation.js?v=plumes-r31-20261028';
+import {createScene} from './pixi-scene.js?v=plumes-r31-20261028';
+import {CauldronAnimator} from './cauldron-animation.js?v=plumes-r31-20261028';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
