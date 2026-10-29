@@ -71,7 +71,7 @@ export class Presentation {
   if(REDUCED)return;
   const {PIXI}=this.scene,coin=new PIXI.Sprite(this.scene.texture(src)),trail=new PIXI.Graphics();
   const size=Math.min(62,Math.max(28,from.width*.55)),fit=Math.min(size/coin.texture.width,size/coin.texture.height);
-  const x0=from.x+from.width/2,y0=from.y+from.height/2,ms=680;
+  const x0=from.x+from.width/2,y0=from.y+from.height/2,ms=720;
   coin.anchor.set(.5);coin.scale.set(fit);coin.eventMode=trail.eventMode='none';
   const layer=this.scene.effectsLayer||this.scene.layers.effects;layer.addChild(trail,coin);this.nodes.add(trail);this.nodes.add(coin);
   let approached=false;
@@ -84,8 +84,8 @@ export class Presentation {
     return {x:u*u*u*x0+3*u*u*t*(x0+dx*.08)+3*u*t*t*(x1-dx*.08)+t*t*t*x1,
      y:u*u*u*y0+3*u*u*t*(y0-lift)+3*u*t*t*(y1-34)+t*t*t*y1};
    };
-   const p=point(k),consume=smooth(Math.max(0,(k-.58)/.42)),fade=1-smooth(Math.max(0,(k-.91)/.09));
-   coin.position.set(p.x,p.y);coin.scale.set(fit*(1-.74*consume));coin.rotation=Math.sin(k*Math.PI)*.16;coin.alpha=fade;
+   const p=point(k),consume=smooth(Math.max(0,(k-.66)/.34)),fade=1-smooth(Math.max(0,(k-.96)/.04));
+   coin.position.set(p.x,p.y);coin.scale.set(fit*(1-.86*consume));coin.rotation=Math.sin(k*Math.PI)*.16;coin.alpha=fade;
    trail.clear();
    // A short tapered light trace follows the real coin path. Its quiet tail
    // carries direction without covering the approved symbol with particles.
@@ -102,7 +102,7 @@ export class Presentation {
   const generation=this.generation;
   const ordered=[...gems].sort((a,b)=>(a.cell%3)*5+Math.floor(a.cell/3)-(b.cell%3)*5-Math.floor(b.cell/3));
   await Promise.all(ordered.map(async(gem,i)=>{
-   await this.clock.wait(i*(ordered.length>8?160:210));if(generation!==this.generation)return;
+   await this.clock.wait(i*(ordered.length>8?140:180));if(generation!==this.generation)return;
    const index=(gem.cell%3)*5+Math.floor(gem.cell/3),cell=this.scene.cells[index];
    const source=this.scene.cellRect(index),potRect=this.scene.potRect(gem.pot);
    const target=()=>this.scene.cauldronAnimator?.mouthRect(gem.pot)||{...potRect,height:potRect.height*.4};
@@ -132,28 +132,51 @@ export class Presentation {
    for(const {node,x,y,px,py,cx,cy}of initial)if(!destroyed(node)){node.scale.set(x*(1+p*.045),y*(1+p*.045));node.position.set(px-p*.045*cx*x,py-p*2-p*.045*cy*y);}
   },skip);}finally{for(const {node,x,y,px,py}of initial)if(!destroyed(node)){node.scale.set(x,y);node.position.set(px,py);}}
  }
+ // SUPER emits from its actual mouth while the board remains visible. Only
+ // after the sustained release does a warm veil carry the scene into the feature.
  async transition(swap,reverse=false){
-  const generation=this.generation,{PIXI}=this.scene,cover=new PIXI.Container(),background=new PIXI.Graphics();
-  cover.label=reverse?'return-transition':'feature-transition';cover.eventMode='none';cover.alpha=0;
-  const symbol=new PIXI.Sprite(this.scene.texture(this.url('cauldron_super_2')));symbol.anchor.set(.5);
-  const title=new PIXI.Text({text:'HOLD & WIN',style:{fontFamily:'Georgia, serif',fontSize:36,fontWeight:'bold',fill:0xffdda2,letterSpacing:2}});title.anchor.set(.5);
-  const note=new PIXI.Text({text:reverse?'RETURNING TO BASE GAME':'COINS LOCK · NEW COINS RESET TO 3',style:{fontFamily:'Arial, sans-serif',fontSize:11,fill:0xd8c0e5,letterSpacing:1.4}});note.anchor.set(.5);
-  cover.addChild(background,symbol,title,note);(this.scene.effectsLayer||this.scene.layers.effects).addChild(cover);this.nodes.add(cover);
-  const layout=()=>{
-   const screen=this.scene.app.screen||this.scene.app.renderer.screen,width=screen.width,height=screen.height;
-   background.clear().rect(0,0,width,height).fill({color:0x170d29,alpha:.985});
-   const artWidth=Math.min(360,width*.65),artHeight=Math.min(240,height*.5),fit=Math.min(artWidth/symbol.texture.width,artHeight/symbol.texture.height);
-   symbol.scale.set(fit);symbol.position.set(width/2,height*.42);symbol.baseScale=fit;
-   title.style.fontSize=Math.min(36,width*.065);title.position.set(width/2,height*.42+artHeight/2+35);
-   note.style.fontSize=Math.min(11,width*.025);note.position.set(width/2,height*.42+artHeight/2+66);
-  };layout();const offResize=this.scene.onResize?.(layout);
+  const generation=this.generation,{PIXI}=this.scene,layer=this.scene.effectsLayer||this.scene.layers.effects;
+  const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=256;
+  const ctx=glowCanvas.getContext('2d'),gradient=ctx.createRadialGradient(128,128,0,128,128,128);
+  gradient.addColorStop(0,'rgba(255,247,193,.8)');gradient.addColorStop(.28,'rgba(255,209,100,.35)');gradient.addColorStop(1,'rgba(255,170,50,0)');
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+  const glowTexture=PIXI.Texture.from(glowCanvas),host=new PIXI.Container(),light=new PIXI.Sprite(glowTexture),veil=new PIXI.Graphics();
+  light.anchor.set(.5);light.alpha=0;
+  host.label=reverse?'feature-return':'super-activation';host.eventMode='none';host.addChild(light);layer.addChild(host);this.nodes.add(host);
+  const coins=reverse||REDUCED?[]:Array.from({length:22},(_,i)=>{
+   const coin=new PIXI.Sprite(this.scene.texture(this.url('value_coin_blank')));coin.anchor.set(.5);coin.eventMode='none';coin.visible=false;host.addChild(coin);return coin;
+  });
+  const screen=()=>this.scene.app.screen||this.scene.app.renderer.screen;
+  const mouth=()=>this.scene.cauldronAnimator?.mouthRect('super')||this.scene.potRect('super');
+  const wash=alpha=>{const {width,height}=screen();veil.clear().rect(0,0,width,height).fill(0xffe2a0);veil.alpha=alpha;};
   try{
-   await this.animate(420,k=>{if(!destroyed(cover)){cover.alpha=smooth(k);symbol.scale.set(symbol.baseScale*(.94+.06*smooth(k)));}});
+   if(!reverse){
+    this.trace('super-activation-start');this.scene.cauldronAnimator?.activateSuper(3300);
+    await this.animate(3300,k=>{
+     if(destroyed(host))return;
+     const {width,height}=screen(),m=mouth(),cx=m.x+m.width/2,cy=m.y+m.height/2;
+     const envelope=smooth(k/.14)*(1-smooth((k-.76)/.24));
+     // Raster radial alpha is consistent across Pixi WebGL and Canvas fallback.
+     light.position.set(cx,cy);light.width=m.width*1.8;light.height=Math.max(m.height*3,45);light.alpha=envelope*.48;
+     coins.forEach((coin,i)=>{
+      const age=k*3300-i*92,duration=1160+(i%4)*100,t=age/duration;
+      coin.visible=t>0&&t<1;if(!coin.visible)return;
+      const side=(i%2?1:-1),spread=side*(.045+(i*7%13)/90)*width;
+      const x=cx+spread*t,y=cy-height*(.15+(i%5)*.016)*4*t*(1-t)+height*.30*t*t;
+      const size=Math.min(31,m.width*.18)*( .75+(i%3)*.13),fit=size/coin.texture.width;
+      coin.position.set(x,y);coin.scale.set(fit*(.22+.78*Math.abs(Math.cos(t*Math.PI*2+i))),fit);
+      coin.rotation=side*t*.7;coin.alpha=smooth(t/.09)*(1-smooth((t-.65)/.35))*envelope;
+     });
+    });
+   }
    if(generation!==this.generation)return;
-   await swap();this.trace('transition-swap',{reverse});await this.clock.wait(180);
+   host.addChild(veil);await this.animate(reverse?260:420,k=>wash(smooth(k)*.97));
    if(generation!==this.generation)return;
-   await this.animate(360,k=>{if(!destroyed(cover))cover.alpha=1-smooth(k);});
-  }finally{offResize?.();this.removeNode(cover);}
+   await swap();this.trace('transition-swap',{reverse});
+   light.visible=false;for(const coin of coins)coin.visible=false;
+   await this.animate(reverse?320:520,k=>wash((1-smooth(k))*.97));
+   this.trace(reverse?'feature-return-complete':'super-activation-complete');
+  }finally{this.removeNode(host);glowTexture.destroy(true);}
  }
  async trigger(coins){
   const list=Object.keys(coins).map(Number).sort((a,b)=>(a%3)*5+Math.floor(a/3)-(b%3)*5-Math.floor(b/3)),generation=this.generation;

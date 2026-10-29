@@ -158,9 +158,9 @@ export class ApprovedSmokeRig{
     const period=2250+stream*170,p=fract(time/period+index*.173+stream*.283+copy*.5),fade=Math.sin(p*Math.PI)**2;
     // Vapor stretches and curls above a fixed mouth. Translating an entire
     // approved plume upward would expose a cut bottom and detach it from the rim.
-    const wind=Math.sin(time/430+index*1.8)*(.20+intensity*.012)+Math.sin(time/1430+stream*2.2)*.025+Math.sin(p*Math.PI*1.6+stream)*.02;
+    const wind=Math.sin(time/760+index*1.8)*(.20+intensity*.012)+Math.sin(time/1430+stream*2.2)*.025+Math.sin(p*Math.PI*1.6+stream)*.02;
     node.position.set(256,190);node.skew.set(still?0:wind,0);
-    node.scale.set(still?1:(.94+.13*p)*(1-inhale*.035+exhale*.04),still?1:(.90+.28*p)*(1-inhale*.075-anticipation*.025+exhale*.065+grow*.025));
+    node.scale.set(still?1:(.94+.13*p)*(1-inhale*.055+exhale*.075),still?1:(.90+.28*p)*(1-inhale*.10-anticipation*.025+exhale*.12+grow*.045));
     node.alpha=still?(copy===0?1:0):fade*(1.02+energy*.08);
    }
   }

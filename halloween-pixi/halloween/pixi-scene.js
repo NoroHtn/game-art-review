@@ -1,7 +1,7 @@
 // The active Halloween scene graph. All game artwork is drawn by PixiJS;
 // the surrounding HTML supplies layout anchors and accessible controls only.
 import { LINES } from '../game/config.js';
-import { ApprovedSmokeRig } from './approved-smoke.js?v=plumes-r31-20261028';
+import { ApprovedSmokeRig } from './approved-smoke.js?v=reference-r4-20261029';
 
 const POT_NAMES = ['multi', 'collect', 'mystery', 'super'];
 const FRONT_POT_SCALE = 1.3;

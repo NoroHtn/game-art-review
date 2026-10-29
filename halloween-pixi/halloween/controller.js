@@ -1,17 +1,17 @@
-// PixiJS Halloween game. Outcomes, symbols, paytable and wallet remain in the original mock RGS.
+// PixiJS Halloween game. Outcomes and wallet come from the Halloween demo RGS; Wild is always full reel.
 // Choreography sources: Edgar main 34a20e39, slot-motion-secrets and observed reference timeline.
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
-import {createServer,enableTall3} from '../game/mock-server.js';
-import {FrameClock,ReelMotion} from './reel-motion.js';
-import {Presentation,BonusMotion} from './presentation.js?v=plumes-r31-20261028';
-import {createScene} from './pixi-scene.js?v=plumes-r31-20261028';
-import {CauldronAnimator} from './cauldron-animation.js?v=plumes-r31-20261028';
+import {createServer} from '../game/halloween-server.js?v=reference-r4-20261029';
+import {FrameClock,ReelMotion} from './reel-motion.js?v=reference-r4-20261029';
+import {Presentation,BonusMotion} from './presentation.js?v=reference-r4-20261029';
+import {createScene} from './pixi-scene.js?v=reference-r4-20261029';
+import {CauldronAnimator} from './cauldron-animation.js?v=reference-r4-20261029';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
+const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_3cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_3cell',16:'wild_3cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
 const APPROVED_ART_REVISION={book_latest:'514172a64299',bat_pearl:'5e1ddc236aa6'};
 const url=name=>/^low_[jqka]$/.test(name)?`assets/${name}_authority.png`:`assets/${name}.webp${APPROVED_ART_REVISION[name]?`?v=${APPROVED_ART_REVISION[name]}`:''}`;
-const clock=new FrameClock();let server=createServer();enableTall3(true);
+const clock=new FrameClock();let server=createServer();
 const state={phase:'LOADING',busy:true,betIdx:4,mode:'normal',auto:false,balance:server.balance,lastWin:0,bonus:null,visibleCoins:{},respins:3,pots:{multi:0,collect:0,mystery:0},grid:[[1,5,4],[6,2,7],[3,8,1],[7,4,6],[2,5,3]],coins:{},sound:false,skipLevel:0};
 const isQA=new URLSearchParams(location.search).has('qa');
 const bet=()=>BET_LADDER[state.betIdx],events=[];let epoch=0,autoAt=Infinity,audio=null;
@@ -220,7 +220,7 @@ if(isQA){
    events:events.slice(-35)});
  });
  const panel=document.createElement('nav');panel.className='qa-controls';panel.style.flexWrap='wrap';panel.style.maxWidth='calc(100vw - 8px)';panel.setAttribute('aria-label','Presentation review');
- for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
+ for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review Wild',[[1,2,3],[9,4,5],[2,15,16],[17,18,19],[10,11,12]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
  // A review-only recording captures actual rendered frames, so a moving
  // transform or passing state test cannot stand in for visible animation.
  if(scene.app.canvas.captureStream&&typeof MediaRecorder!=='undefined'){

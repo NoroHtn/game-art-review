@@ -10,6 +10,10 @@
       "bytes": 4744,
       "sha256": "f27774088cc6b9334dda0ec21672deac7bc1e164f8b44645e9d687e840f1e71b"
     },
+    "game/halloween-server.js": {
+      "bytes": 5292,
+      "sha256": "598097f3f1d1bc6a2422a01787446eca176d2dfe2e8947f40b2a07cb91992a7a"
+    },
     "game/index.html": {
       "bytes": 349,
       "sha256": "cacd5bf9280186e72d03bbee37d1624279f401d28d85ce657c7ed14c46804f83"
@@ -19,8 +23,8 @@
       "sha256": "64d7c2e4f53f988cdb5014fc3258f49c69158e597cb70f90f1aaa196c79b297e"
     },
     "halloween/approved-smoke.js": {
-      "bytes": 13730,
-      "sha256": "4f4a2eb8b91a5e5c7be4251bcd14a4949f84053eb2f098e3ce61202ab3efa054"
+      "bytes": 13729,
+      "sha256": "27862382c1a86ff2448f7222c15bd6d92b2ac57d344679c5d78bd928c997a36e"
     },
     "halloween/assets/bat_collect.webp": {
       "bytes": 231954,
@@ -147,52 +151,52 @@
       "sha256": "26b13954c5952714a83ecb454eb1c9bdc08bb783e794d9cdc4122b4331265c23"
     },
     "halloween/bonus-atlas.html": {
-      "bytes": 3381,
-      "sha256": "5de97252ff4f00be6a6a33b81da9e397a2937538a60ecf94eb54f7d464541b10"
+      "bytes": 3385,
+      "sha256": "022ac9da490f83a403a23f1e2aafec34d53547e78f1412e0c4dcfc0f05c779e0"
     },
     "halloween/bonus-atlas.js": {
-      "bytes": 7551,
-      "sha256": "3d0513a7fd9c052cf3faddf1cccae1d761926d3ca8243936a74ddf0ba86cff41"
+      "bytes": 7577,
+      "sha256": "d74455c279697a268d50d435c2a8d0d16299b6f3791f42645a1fb5418cce5a06"
     },
     "halloween/cauldron-animation.js": {
-      "bytes": 16889,
-      "sha256": "9b9a9d1cf5495928c55ea701813ed96eb7877b69c4254b4b1f96c3ccad5fab39"
+      "bytes": 17489,
+      "sha256": "3bc10229761d7696d91db961dc507951dfc7c108ffbe275fb9d001aa3c475b22"
     },
     "halloween/controller.js": {
-      "bytes": 26568,
-      "sha256": "1aca24841132f84bcc6b71ed36eff41fd0646f9f6d42002cbd92c22b6224363c"
+      "bytes": 26671,
+      "sha256": "a6fe902f32c28a294c4d443548ad8503b8aa422287f6ba788bad3717c04d710a"
     },
     "halloween/controls.css": {
       "bytes": 12908,
       "sha256": "2f9ea117f0f6b5bc850a61d1e0ddb26d24cc8625855e99c76828a81b32a5f86e"
     },
     "halloween/index.html": {
-      "bytes": 8559,
-      "sha256": "bd7611b38022f06d85767301873abbc5087c22ffc06df39fc0948404376e9783"
+      "bytes": 8622,
+      "sha256": "b3c85ba023e9ca33bffc915f85ca1482adb0e0c1f7f34c4dbe9ea2bccaa2e0f1"
     },
     "halloween/pixi-scene.css": {
       "bytes": 1760,
       "sha256": "d51e2a4b7d152b75d1d8a99968b063bdbb61fa73e56cdc48301dd88305d4719b"
     },
     "halloween/pixi-scene.js": {
-      "bytes": 32102,
-      "sha256": "034303db49a213bf6b9fdc575285f79c6b9b472a329fedd1c000e3561e1bf692"
+      "bytes": 32104,
+      "sha256": "3d0118defbfeb36341b17e0bbcc0c0ea2c685fec157fcf4cd67015e893c63f7d"
     },
     "halloween/presentation.js": {
-      "bytes": 15806,
-      "sha256": "1d1501c21b7587c35e2b52521b9fbdb0292678cde056ba1a1ed6741acae3d5fd"
+      "bytes": 16948,
+      "sha256": "070639fb21b0a48d8dc8fcb749bc95e0df7e9214286c5e35f3beb4c7ce21d243"
     },
     "halloween/reel-atlas.html": {
-      "bytes": 3314,
-      "sha256": "aa5f4905e01c896ebae53c6e7f710de971dc65a57e99696080b4654afcc50113"
+      "bytes": 3318,
+      "sha256": "bed1a197f65ceaad75c57e521c6cdc08b732147a1cdf012381e862c3fe2e63b3"
     },
     "halloween/reel-atlas.js": {
-      "bytes": 5992,
-      "sha256": "97b0649cb817f2c00941280c3d9d4f292a65fa81d4f179ac2e593192574d4bb5"
+      "bytes": 6021,
+      "sha256": "47ec54d7a451e1bcd2e4e0f3169d11b29f701546293f208dc901fc2f788ea9e7"
     },
     "halloween/reel-motion.js": {
-      "bytes": 16064,
-      "sha256": "20a2912c88b364ac0b8b86dc0f19348ec480acdaccfb4731e5bd44fd5cb81ac0"
+      "bytes": 16062,
+      "sha256": "1876580f02bbc68c9dc38ba210929e1f6806dff70fdddd70f2e799703bdf86d3"
     },
     "halloween/style.css": {
       "bytes": 15658,

@@ -138,6 +138,12 @@ export class CauldronAnimator {
    if (next) next.due = Math.max(next.due, growth.end);
   }
  }
+ activateSuper(duration = 3300) {
+  if (this.destroyed) return;
+  this.superActivation = {start: this.clock.now, end: this.clock.now + duration};
+  this.record(this.pots.super, 'super-activation-start', {duration});
+  this.update(this.clock.now);
+ }
  update(now = this.clock.now) {
   if (this.destroyed) return;
   for (const pot of Object.values(this.pots)) {
@@ -150,7 +156,7 @@ export class CauldronAnimator {
     this.record(pot, 'cauldron-complete', {eventId: event.id, arrivalTime: round(event.start), visualTail: CAULDRON_DURATIONS.collect});
     event.resolve?.({pot: pot.name, count: event.count, tier: pot.tier, state: pot.growth ? 'Grow' : pot.impulses.length ? 'Collect' : 'Idle'});
    }
-   if (!pot.growth) this.setState(pot, pot.impulses.length ? 'Collect' : 'Idle');
+   if (!pot.growth) this.setState(pot, pot.name === 'super' && this.superActivation && now < this.superActivation.end ? 'Activate' : pot.impulses.length ? 'Collect' : 'Idle');
    this.render(pot, now);
   }
  }
@@ -187,7 +193,9 @@ export class CauldronAnimator {
    reactionRaw += pressure(k); inhaleRaw += pulse(age / 220); exhaleRaw += pulse((age - 140) / (CAULDRON_DURATIONS.collect - 140));
    anticipationRaw += event.carry * (1 - smooth(age / CAULDRON_DURATIONS.anticipation));
   }
-  const reaction = saturate(reactionRaw), inhale = saturate(inhaleRaw), exhale = saturate(exhaleRaw), anticipation = saturate(anticipationRaw), energy = saturate(inhaleRaw + exhaleRaw + grow * .5);
+  const activation = pot.name === 'super' && this.superActivation ? pulse((now-this.superActivation.start)/(this.superActivation.end-this.superActivation.start)) : 0;
+  exhaleRaw += activation * 1.5;
+  const reaction = saturate(reactionRaw), inhale = saturate(inhaleRaw), exhale = saturate(exhaleRaw), anticipation = saturate(anticipationRaw), energy = saturate(inhaleRaw + exhaleRaw + grow * .5 + activation);
   const d = this.dimensions(pot), phase = now / 1900 + pot.index * 1.67;
   const breath = Math.sin(phase) * (.001 + intensity * .0005);
   // The vessel's metal remains stable: uniform sub-0.5% weighting only. All
@@ -195,7 +203,7 @@ export class CauldronAnimator {
   const scale = clamp(1 + breath - reaction * .0015 + grow * .0012, .995, 1.005);
   const y = Math.sin(phase * .83) * d.height * .0007 + d.height * (.0015 * reaction - .0015 * grow);
   this.pose(pot, y, scale);
-  const values = {reaction, grow, intensity, anticipation, inhale, exhale, energy, reducedMotion: false};
+  const values = {reaction, grow, intensity, anticipation, inhale, exhale, energy, activation, reducedMotion: false};
   this.driveSmoke(pot, now, values);
   pot.renderState = Object.fromEntries(Object.entries({...values, time: now}).map(([key, value]) => [key, typeof value === 'number' ? round(value) : value]));
  }
@@ -213,6 +221,7 @@ export class CauldronAnimator {
  }
  stop() {
   if (this.destroyed) return;
+  this.superActivation = null;
   for (const pot of Object.values(this.pots)) {
    this.cancelPending(pot, 'stop'); pot.count = pot.displayCount = pot.targetCount;
    this.applyTier(pot, cauldronTier(pot.count, pot.name)); pot.settledTier = pot.tier; this.resetPose(pot); this.clearEffects(pot);

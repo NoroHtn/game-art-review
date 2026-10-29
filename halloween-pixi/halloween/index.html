@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#100b22"><title>Halloween · Hold & Win · PixiJS</title>
 <link rel="icon" href="data:,"><link rel="stylesheet" href="style.css?v=motion-r4"><link rel="stylesheet" href="controls.css?v=playson-controls-20261026">
-<link rel="stylesheet" href="pixi-scene.css?v=plumes-r31-20261028">
+<link rel="stylesheet" href="pixi-scene.css?v=reference-r4-20261029">
 </head>
 <body>
 <div id="boot" class="boot" role="status"><h2>HALLOWEEN</h2><p>Loading artwork and preparing reels…</p></div>
@@ -46,10 +46,10 @@
 </main>
 <dialog id="game-menu" class="settings-dialog"><button class="close" aria-label="Close game menu">×</button><h2>Game menu</h2><button id="menu-rules" class="menu-action">Game rules & paytable</button><button id="reset" class="menu-action">Reset demo balance</button><p>All play uses demo credits.</p></dialog>
 <dialog id="round-history" class="settings-dialog"><button class="close" aria-label="Close recent demo rounds">×</button><h2>Recent demo rounds</h2><p id="history-empty">Your completed rounds will appear here.</p><table class="history-table"><thead><tr><th scope="col">ROUND</th><th scope="col">BET / COST</th><th scope="col">RETURN</th></tr></thead><tbody id="history-list"></tbody></table><p>Up to 20 completed rounds from this page session.</p></dialog>
-<dialog id="rules"><button class="close" aria-label="Close rules">×</button><h2>How to play</h2><p>Match 3 or more paying symbols from the left on any of 25 fixed paylines. WILD substitutes for paying symbols on reels 2–5.</p><p>Land 6 or more coins to enter Hold & Win. Coins lock in place. You start with 3 respins; every new coin resets the counter to 3. Fill all 15 cells for the 3,000× Grand award.</p><p>The cauldron meters show the existing demo’s collection progress. Their additional feature rewards are not implemented in the original demo.</p><p>Buy Bonus costs 70× your current bet. All play uses demo credits. This is unvalidated demo mathematics; no RTP or real-money readiness is claimed.</p><div class="paytable" id="paytable"></div></dialog>
+<dialog id="rules"><button class="close" aria-label="Close rules">×</button><h2>How to play</h2><p>Match 3 or more paying symbols from the left on any of 25 fixed paylines. WILD is always fully open, fills its reel and substitutes for paying symbols on all three rows of reels 2–5.</p><p>Land 6 or more coins to enter Hold & Win. Coins lock in place. You start with 3 respins; every new coin resets the counter to 3. Fill all 15 cells for the 3,000× Grand award.</p><p>The cauldron meters show the existing demo’s collection progress. Their additional feature rewards are not implemented in the original demo.</p><p>Buy Bonus costs 70× your current bet. All play uses demo credits. This is unvalidated demo mathematics; no RTP or real-money readiness is claimed.</p><div class="paytable" id="paytable"></div></dialog>
 <dialog id="purchase"><button class="close" aria-label="Cancel purchase">×</button><h2>Enter Hold & Win</h2><p>Start with 6 coins and 3 respins.</p><p class="cost">COST <strong id="buy-cost"></strong></p><button id="confirm-buy" class="gold">BUY BONUS</button><button class="cancel">CANCEL</button></dialog>
 <dialog id="celebrate"><h2 id="celebrate-title">BONUS COMPLETE</h2><strong id="celebrate-value"></strong><button id="continue" class="gold">CONTINUE</button></dialog>
 <div id="scene-transition" class="scene-transition" hidden aria-hidden="true"><div><img src="assets/cauldron_super_2.webp" alt=""><h2>HOLD & WIN</h2><p>3 RESPINS · NEW COINS RESET TO 3</p></div></div>
 <script src="vendor/pixi-8.22.0.min.js"></script>
-<script type="module" src="controller.js?v=plumes-r31-20261028"></script>
+<script type="module" src="controller.js?v=reference-r4-20261029"></script>
 </body></html>

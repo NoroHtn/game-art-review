@@ -75,7 +75,7 @@ export class FrameClock {
   }
 }
 
-const FILLER=[1,2,3,4,5,6,7,8,1,2,3,4,14,9];
+const FILLER=[1,2,3,4,5,6,7,8,1,2,3,4,14];
 const tall = id => id>=15&&id<=19;
 
 // Bake the reviewed vertical streak once per approved source; moving strips

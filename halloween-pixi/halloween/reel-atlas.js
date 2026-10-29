@@ -1,10 +1,10 @@
-import {FrameClock,ReelMotion} from './reel-motion.js';
-import {createScene} from './pixi-scene.js?v=plumes-r31-20261028';
+import {FrameClock,ReelMotion} from './reel-motion.js?v=reference-r4-20261029';
+import {createScene} from './pixi-scene.js?v=reference-r4-20261029';
 
 const FPS=32,PER_PAGE=16,REPLY_AT=300;
 const CLIPS={normal:{mode:'normal',duration:2.5},quick:{mode:'quick',duration:2},turbo:{mode:'turbo',duration:1.5},quickstop:{mode:'normal',duration:2,quickAt:500},reduced:{mode:'normal',duration:.5,reduced:true}};
-const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_1cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_2cell',16:'wild_2cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
-const INITIAL=[[1,5,4],[6,2,7],[3,8,1],[7,4,6],[2,5,3]],FINAL=[[5,1,14],[6,15,16],[7,2,10],[8,3,12],[4,9,13]],COINS={2:400};
+const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_3cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_3cell',16:'wild_3cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
+const INITIAL=[[1,5,4],[6,2,7],[3,8,1],[7,4,6],[2,5,3]],FINAL=[[5,1,14],[17,18,19],[7,2,10],[8,3,12],[17,18,19]],COINS={2:400};
 const APPROVED_ART_REVISION={book_latest:'514172a64299',bat_pearl:'5e1ddc236aa6'};
 const url=name=>/^low_[jqka]$/.test(name)?`assets/${name}_authority.png`:`assets/${name}.webp${APPROVED_ART_REVISION[name]?`?v=${APPROVED_ART_REVISION[name]}`:''}`;
 const src=id=>url(ART[id]),fmt=value=>(value/100).toFixed(2),$=id=>document.getElementById(id);
