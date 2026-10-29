@@ -1,0 +1,151 @@
+{
+  "repository": "EdgarHovsepyan/slot-diamond-princess-hold-and-win",
+  "referenceCommit": "9afbbfcfcb874415bc5f73a5ca9403d92b3e11a6",
+  "originalLargeAssets": "Existing inherited art/type and art/vfx in NoroHtn source repo",
+  "assets": [
+    {
+      "source": "art/redesign/d3/bigwin/banner-big.png",
+      "sourceBlob": "d0fa8e3d524781010ec5a7b9bdfce7fadd0423af",
+      "runtime": "halloween/assets/edgar/banner-big.webp",
+      "sha256": "d7dc54e4a80bd1f3e2c634e51c336104555af3f527004cff5ac5e1a81cd7eaa8",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bigwin/banner-mega.png",
+      "sourceBlob": "ab4f1a5dd7197abf402fe131fc0cc4e03339884b",
+      "runtime": "halloween/assets/edgar/banner-mega.webp",
+      "sha256": "7dd1d555562d2bd17c94ab4e405a0168ac36b850e33e4e70ceea811f31edead6",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bigwin/banner-epic.png",
+      "sourceBlob": "e2c2039da9fb35617601848feeffb9533663b5a1",
+      "runtime": "halloween/assets/edgar/banner-epic.webp",
+      "sha256": "ac7e81da325aea1a60671097d5e46b0495aefcc12135627f9b1904ece410a7aa",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/digits-candy.png",
+      "sourceBlob": "74f93edc73de5cbdaa11c97881a383c94a99e6e9",
+      "runtime": "halloween/assets/edgar/digits-candy.webp",
+      "sha256": "759be2e725f5037bc2f2df204c1f00a916e9a52e7519936dc6adb1d31327a925",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bonus-ui/total-frame.png",
+      "sourceBlob": "3f6a2743c258b7f5d85c0019d0072d20eb62779c",
+      "runtime": "halloween/assets/edgar/total-frame.webp",
+      "sha256": "c8a97b1d5b4d7f3edef11631b528633715c76f6226d89c506fc99e2b5d1bd676",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bonus-ui/pip-on.png",
+      "sourceBlob": "df9ce3632d9417fd2bb942149020d1740b0c5f00",
+      "runtime": "halloween/assets/edgar/pip-on.webp",
+      "sha256": "b03c1f294c311a95361dfc8ec5724c43c7619abb8d68fe3b9f7eef8898cc44ad",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bonus-ui/pip-off.png",
+      "sourceBlob": "961ecbad58e8483020532b6bf5113c8f2ae143d6",
+      "runtime": "halloween/assets/edgar/pip-off.webp",
+      "sha256": "05121054e3457738775538d15e5fc93a84a1f2af9f7d8f798729b2422fe23351",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bonus-ui/pip-flash.png",
+      "sourceBlob": "1b9ff140c09c72914da0e70625a697702b8749e8",
+      "runtime": "halloween/assets/edgar/pip-flash.webp",
+      "sha256": "bc1e74f6f6bc6d05dbfa92e732c5f343cef20386bb3f41c283ab910e101019d3",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_00.png",
+      "sourceBlob": "d9cb40b6c110b781274438503620648f9cebde63",
+      "runtime": "halloween/assets/edgar/coin-spin_00.webp",
+      "sha256": "3f5383f00fe6e480597b693f0074b8aed312c5cf7f5838b6bb2052d1f01bdbc6",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_01.png",
+      "sourceBlob": "33490303fcf2121e310d1ab5c0e5cb0968a25f4b",
+      "runtime": "halloween/assets/edgar/coin-spin_01.webp",
+      "sha256": "ec2c1bc2036b793276cd12de20165dc01c87170490bb2c196e5c4e458f6811bb",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_02.png",
+      "sourceBlob": "026a73852602b310a5f86963f5f8a94a494bc07d",
+      "runtime": "halloween/assets/edgar/coin-spin_02.webp",
+      "sha256": "7a9fc2dcf783f2f649f7e6d75ecfb510b6968ca3ff8e7853988951cae8252832",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_03.png",
+      "sourceBlob": "63329352857effec5c99328e2b63d60ea3e669af",
+      "runtime": "halloween/assets/edgar/coin-spin_03.webp",
+      "sha256": "3bb574bbdad602e16b575dfb4d2de46254d2bc9ba5661ba6b82226341676420a",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_04.png",
+      "sourceBlob": "963d3557bbd9b03f7ac98b08ddd6a2fac516d8aa",
+      "runtime": "halloween/assets/edgar/coin-spin_04.webp",
+      "sha256": "0db3f66386881565dca687cc2c7d3951bb05904251d6c01e366f1fb8d0c3fd48",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_05.png",
+      "sourceBlob": "5fe398b6f8943e20d80bdbcda5ffdb570d410bab",
+      "runtime": "halloween/assets/edgar/coin-spin_05.webp",
+      "sha256": "9225171fd9451b19cb3f1434692564a361d3fdb632c00921fdc6fc3b0ddd62a0",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_06.png",
+      "sourceBlob": "2855b931546c2166eb7f8b8dbbae870ddd4dc1b1",
+      "runtime": "halloween/assets/edgar/coin-spin_06.webp",
+      "sha256": "954e7a6c435b5963722d52551b5709c7f446a49baf8478efad44ef1deb5dd5b6",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/coin-spin_07.png",
+      "sourceBlob": "b3e14ba26dfcb33fb0a701f6aa0f484a54866ea7",
+      "runtime": "halloween/assets/edgar/coin-spin_07.webp",
+      "sha256": "7cfe054b1e61fe4b57f8d4cb9aa84bcf19da32e9df17e2ae0357a55295881f76",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/vfx/sparkle_03.png",
+      "sourceBlob": "cd77779b0422753f166452aeeb970676e337979c",
+      "runtime": "halloween/assets/edgar/sparkle_03.webp",
+      "sha256": "df11792a1acea49f377e53639210939bbfa885ea0092eca6f1ac0e4029a5ecc5",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/redesign/d3/bonus-ui/cell-empty.png",
+      "sourceBlob": "0fcf1218f7166f1c7b41b2a665035ade121e544a",
+      "runtime": "halloween/assets/edgar/cell-empty.webp",
+      "sha256": "997e6eaf269b109ff62a023def62e15fef4ccfc590654e810264b2f7d03d7f44",
+      "conversion": "lossless WebP; decoded RGBA identical"
+    },
+    {
+      "source": "art/type/logo-type.png",
+      "runtime": "halloween/assets/edgar/logo-type.png",
+      "sha256": "75d8958ec8ed06ed153b267cc547c509ca8ea8767be9bf4adb25988e1d838f07",
+      "conversion": "original source bytes; copied by standalone builder"
+    },
+    {
+      "source": "art/vfx/counter-frame.png",
+      "runtime": "halloween/assets/edgar/counter-frame.png",
+      "sha256": "5e2711fd932023e429feb73c6b45bed652cf9a1f3dee71b3bcb96860013f18a7",
+      "conversion": "original source bytes; copied by standalone builder"
+    },
+    {
+      "source": "art/type/logo-type.json",
+      "runtime": "halloween/assets/edgar/logo-type.json",
+      "sha256": "2fd68636b3318f67ce9ab7c387cd4605dfe0eb9a4c92db23164d1627bd8c7249",
+      "conversion": "original source bytes; copied by standalone builder"
+    }
+  ]
+}

@@ -33,3 +33,14 @@
 @media (max-height: 700px) and (min-width: 621px) and (orientation: landscape) {
   .pixi-game .pot-art { height: 58px; }
 }
+
+/* Source-art header and bonus HUD are drawn by Pixi; anchors stay accessible. */
+.edgar-ui-ready .wordmark h1{visibility:hidden}
+.edgar-ui-ready #bonus-banner{visibility:hidden}
+.pixi-celebration{position:absolute;inset:0;z-index:8;pointer-events:none}
+.pixi-celebration[hidden]{display:none}
+.pixi-celebration #continue{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);pointer-events:auto;min-width:150px;font-size:14px;letter-spacing:.12em}
+.ceremony-active .game-header,.ceremony-active .jackpots,.ceremony-active .controls,.ceremony-active .playfield>.buy{opacity:.2;pointer-events:none}
+@media (max-width:620px){.pixi-celebration #continue{bottom:23%;min-width:120px}}
+#celebrate.pixi-celebration{padding:0;min-width:0;background:transparent;border:0;border-radius:0;box-shadow:none;margin:0;max-width:none}
+#celebrate.pixi-celebration[hidden]{display:none}

@@ -1,6 +1,6 @@
-import {FrameClock,ReelMotion} from './reel-motion.js?v=reference-r4-20261029';
+import {FrameClock,ReelMotion} from './reel-motion.js?v=edgar-ui-r5-20261029';
 import {BonusMotion} from './presentation.js';
-import {createScene} from './pixi-scene.js?v=reference-r4-20261029';
+import {createScene} from './pixi-scene.js?v=edgar-ui-r5-20261029';
 import {REDUCED} from '../game/config.js';
 
 const FPS=32,PER_PAGE=16,REPLY_AT=300;

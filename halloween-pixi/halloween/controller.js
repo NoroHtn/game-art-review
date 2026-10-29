@@ -1,11 +1,12 @@
 // PixiJS Halloween game. Outcomes and wallet come from the Halloween demo RGS; Wild is always full reel.
 // Choreography sources: Edgar main 34a20e39, slot-motion-secrets and observed reference timeline.
 import {LINES,SYMBOLS,BET_LADDER,REDUCED} from '../game/config.js';
-import {createServer} from '../game/halloween-server.js?v=reference-r4-20261029';
-import {FrameClock,ReelMotion} from './reel-motion.js?v=reference-r4-20261029';
-import {Presentation,BonusMotion} from './presentation.js?v=reference-r4-20261029';
-import {createScene} from './pixi-scene.js?v=reference-r4-20261029';
-import {CauldronAnimator} from './cauldron-animation.js?v=reference-r4-20261029';
+import {createServer} from '../game/halloween-server.js?v=edgar-ui-r5-20261029';
+import {FrameClock,ReelMotion} from './reel-motion.js?v=edgar-ui-r5-20261029';
+import {Presentation,BonusMotion} from './presentation.js?v=edgar-ui-r5-20261029';
+import {createScene} from './pixi-scene.js?v=edgar-ui-r5-20261029';
+import {GameUI} from './game-ui.js?v=edgar-ui-r5-20261029';
+import {CauldronAnimator} from './cauldron-animation.js?v=edgar-ui-r5-20261029';
 const $=id=>document.getElementById(id),fmt=n=>(n/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ART={1:'low_j',2:'low_q',3:'low_k',4:'low_a',5:'book_latest',6:'lantern_latest',7:'potion_latest',8:'hat_latest',9:'wild_3cell',10:'bat_mystery',11:'bat_multi',12:'bat_collect',13:'bat_pearl',14:'value_coin_blank',15:'wild_3cell',16:'wild_3cell',17:'wild_3cell',18:'wild_3cell',19:'wild_3cell'};
 const NAMES={1:'J',2:'Q',3:'K',4:'A',5:'Sun spellbook',6:'Amber lantern',7:'Green potion',8:'Crescent witch hat',9:'WILD',10:'Mystery bat coin',11:'Multi bat coin',12:'Collect bat coin',13:'Pearl bat coin',14:'Value coin'};
@@ -17,7 +18,7 @@ const isQA=new URLSearchParams(location.search).has('qa');
 const bet=()=>BET_LADDER[state.betIdx],events=[];let epoch=0,autoAt=Infinity,audio=null;
 const speedModes=['normal','quick','turbo'],roundHistory=[];
 const turboHold={pointerId:null,timer:null,active:false,restoreMode:null,suppressClick:false};
-let pendingHistory=null,lastTimeMinute=-1,graphicsAvailable=true;
+let pendingHistory=null,lastTimeMinute=-1,graphicsAvailable=true,ceremonySkip=null;
 let confirmedPots={...state.pots};
 function trace(name,data={}){events.push({name,time:Math.round(clock.now),wall:Math.round(performance.now()),...data});if(events.length>1200)events.shift();const output=$('motion-trace');if(output)output.textContent=JSON.stringify(events.slice(-200));}
 function phase(name){state.phase=name;trace('phase',{phase:name});controls();}
@@ -51,7 +52,7 @@ function controls(){
  if(state.bonus)$('board').setAttribute('aria-label',`Hold and Win: ${Object.keys(state.visibleCoins).length} locked coins of 15 cells`);
  for(const[pot,n]of Object.entries(state.pots))document.querySelector(`[data-pot="${pot}"]`).setAttribute('aria-label',`${pot}: ${n} of 9`);
  $('super-cauldron').setAttribute('aria-label',`Large pearlescent SUPER cauldron: ${Object.values(state.pots).reduce((sum,count)=>sum+count,0)} of 27`);
- scene.setPots(state.pots);scene.setBonus(!!state.bonus);
+ scene.setPots(state.pots);scene.setBonus(!!state.bonus);gameUI?.update(state);
 }
 function tone(freq=440,ms=70){if(!state.sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;g.gain.setValueAtTime(.025,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+ms/1000);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+ms/1000);}catch{}}
 const cauldrons=new CauldronAnimator({scene,clock,trace,reducedMotion:REDUCED});
@@ -59,6 +60,7 @@ cauldrons.sync(state.pots,{immediate:true});
 const presentation=new Presentation({clock,scene,url,fmt,trace});
 const reels=new ReelMotion({clock,scene,artResolver:id=>url(ART[id]),fmt,reducedMotion:REDUCED,onEvent:e=>{trace(e.name,e);if(e.name==='outcome-ready')phase('SPINNING');if(e.name==='reel-decelerate'&&state.phase!=='STOPPING')phase('STOPPING');if(e.name==='reel-stop')tone(250+(e.col||0)*45,35);}});
 const bonusMotion=new BonusMotion({clock,scene,url,fmt,trace});
+const gameUI=await new GameUI({scene,clock,fmt,trace}).init();
 const skip=()=>state.skipLevel>0;
 function restoreHeldSpeed(){if(!turboHold.active&&!state.busy&&turboHold.restoreMode!==null){state.mode=turboHold.restoreMode;turboHold.restoreMode=null;}}
 function endTurboHold(){
@@ -85,14 +87,15 @@ function updateSessionTime(){
  const now=new Date(),minute=Math.floor(now.getTime()/60000);if(minute===lastTimeMinute)return;lastTimeMinute=minute;
  $('session-time').textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;$('session-time').dateTime=now.toISOString();
 }
-function skipAction(){if(!state.busy)return;state.skipLevel=Math.min(2,state.skipLevel+1);trace('skip',{stage:state.skipLevel});controls();}
+function skipAction(){if(!state.busy)return;state.skipLevel=Math.min(2,state.skipLevel+1);trace('skip',{stage:state.skipLevel});ceremonySkip?.();controls();}
 async function ceremony(amount,{title='TOTAL WIN',stake=bet(),bonus=false,onValue=()=>{}}={}){
- state.skipLevel=0;phase(bonus?'BONUS_RESULT':'BIG_WIN');const dialog=$('celebrate');$('celebrate-title').textContent=title;$('celebrate-value').textContent=fmt(0);$('continue').textContent='SHOW TOTAL';dialog.classList.toggle('neutral',amount<=stake);dialog.showModal();
- const target=amount/stake;let previous='';
- await presentation.count($('celebrate-value'),0,amount,REDUCED?150:Math.min(9500,3500+Math.max(0,Math.log2(Math.max(1,target)))*550),{skip,onValue:value=>{
-  onValue(value);if(bonus)return;const multiple=value/stake,tier=multiple>=100?'EPIC WIN':multiple>=50?'MEGA WIN':multiple>=30?'SUPER WIN':'BIG WIN';if(tier!==previous){$('celebrate-title').textContent=tier;previous=tier;}
- }});
- $('continue').textContent='CONTINUE';await presentation.animate(1600,()=>{},()=>state.skipLevel>=2);dialog.close();state.skipLevel=0;
+ state.skipLevel=0;phase(bonus?'BONUS_RESULT':'BIG_WIN');
+ const panel=$('celebrate');panel.hidden=false;$('celebrate-title').textContent=title;$('celebrate-value').textContent=fmt(0);$('continue').textContent='SHOW TOTAL';
+ try{await gameUI.ceremony(amount,{bet:stake,turbo:state.mode==='turbo',label:bonus?title:undefined,reducedMotion:REDUCED,
+  onSkipReady:fn=>ceremonySkip=fn,
+  onTier:tier=>{$('celebrate-title').textContent=tier;trace('win-tier',{tier});},
+  onValue:value=>{$('celebrate-value').textContent=fmt(value);onValue(value);if(value===amount)$('continue').textContent='CONTINUE';}
+ });}finally{ceremonySkip=null;panel.hidden=true;state.skipLevel=0;}
 }
 async function baseWin(reply){
  if(!reply.total){status('6 COINS TRIGGER HOLD & WIN');return;}
@@ -141,7 +144,7 @@ async function runBonus(){
 }
 async function perform(task){
  state.busy=true;state.skipLevel=0;autoAt=Infinity;const token=++epoch;presentation.clearFocus();controls();
- try{await task();}catch(error){stopAuto();trace('error',{message:error.message});console.error(error);bonusMotion.cleanup();reels.reset();presentation.cleanup();state.pots={...confirmedPots};cauldrons.stop();cauldrons.sync(state.pots,{immediate:true});state.balance=server.balance;
+ try{await task();}catch(error){stopAuto();trace('error',{message:error.message});console.error(error);gameUI.cancelCeremony?.();bonusMotion.cleanup();reels.reset();presentation.cleanup();state.pots={...confirmedPots};cauldrons.stop();cauldrons.sync(state.pots,{immediate:true});state.balance=server.balance;
   if(state.bonus){renderBonus(state.bonus.board);state.visibleCoins={...state.bonus.board};status('PRESENTATION INTERRUPTED · TAP RESUME');}else{pendingHistory=null;renderGrid();status(error.message==='INSUFFICIENT_FUNDS'?'INSUFFICIENT DEMO CREDITS':'ROUND INTERRUPTED · READY TO CONTINUE');}
  }finally{state.busy=false;restoreHeldSpeed();phase('IDLE');controls();if((state.auto||turboHold.active)&&!state.bonus)autoAt=clock.now+(state.lastWin?state.mode==='turbo'?250:1400:150);}
  return token;
@@ -202,7 +205,7 @@ clock.onTick(()=>{updateSessionTime();if((state.auto||turboHold.active)&&!state.
  scene.updateIdle(clock.now,state.phase==='IDLE'&&!REDUCED&&!state.bonus);
 });
 for(let id=1;id<=8;id++){const item=document.createElement('div'),im=new Image();im.src=url(ART[id]);im.alt=NAMES[id];item.append(im);const text=document.createElement('p');text.textContent=`3 / 4 / 5: ${[...SYMBOLS[id].pay].reverse().join(' / ')}×`;item.append(text);$('paytable').append(item);}
-window.__game={state,clock,reels,scene,cauldrons,events,server:()=>server,play,ready:false,renderer:`pixi-${scene.app.renderer.name}`,snapshot:()=>({phase:state.phase,balance:state.balance,grid:state.grid,scene:scene.snapshot()})};window.__app=scene.app;window.__buyBonus=()=>$('buy').click();
+window.__game={state,clock,reels,scene,cauldrons,gameUI,events,server:()=>server,play,ready:false,renderer:`pixi-${scene.app.renderer.name}`,snapshot:()=>({phase:state.phase,balance:state.balance,grid:state.grid,scene:scene.snapshot()})};window.__app=scene.app;window.__buyBonus=()=>$('buy').click();
 renderGrid();controls();renderHistory();updateSessionTime();
 try{
  await reels.preload();
@@ -215,12 +218,13 @@ if(isQA){
  const diagnostics=document.createElement('output');diagnostics.id='pixi-diagnostics';diagnostics.hidden=true;document.body.append(diagnostics);let previous=-Infinity;
  clock.onTick(()=>{if(clock.now-previous<150)return;previous=clock.now;const gl=scene.app.renderer.gl;
   diagnostics.textContent=JSON.stringify({ready:window.__game.ready,phase:state.phase,busy:state.busy,balance:state.balance,lastWin:state.lastWin,bet:bet(),mode:state.mode,grid:state.grid,coins:state.coins,bonus:state.bonus,visibleCoins:state.visibleCoins,respins:state.respins,graphicsAvailable,
-   graphics:{type:scene.app.renderer.type,webgl:!!gl,version:gl&&!gl.isContextLost()?gl.getParameter(gl.VERSION):null,contextLost:gl?.isContextLost()||false},scene:scene.snapshot(),cauldrons:cauldrons.snapshot(),
+   graphics:{type:scene.app.renderer.type,webgl:!!gl,version:gl&&!gl.isContextLost()?gl.getParameter(gl.VERSION):null,contextLost:gl?.isContextLost()||false},scene:scene.snapshot(),cauldrons:cauldrons.snapshot(),ui:gameUI.snapshot(),
    reels:{active:reels.active,phase:reels.phase,columns:reels.columns?.map(c=>({col:c.col,q:c.q,phase:c.phase,views:c.views.map(v=>({id:v.id,y:v.container.y,sharpAlpha:v.sharp?.alpha,blurAlpha:v.blur?.alpha}))}))||[]},
    events:events.slice(-35)});
  });
  const panel=document.createElement('nav');panel.className='qa-controls';panel.style.flexWrap='wrap';panel.style.maxWidth='calc(100vw - 8px)';panel.setAttribute('aria-label','Presentation review');
- for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review Wild',[[1,2,3],[9,4,5],[2,15,16],[17,18,19],[10,11,12]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}document.body.append(panel);
+ for(const[label,force]of[['Review return',[[1,2,3],[1,4,5],[1,6,7],[2,3,4],[3,4,5]]],['Review win',Array.from({length:5},()=>[1,1,1])],['Review bonus',[[14,14,14],[14,14,14],[1,2,3],[2,3,4],[3,4,1]]],['Review Wild',[[1,2,3],[9,4,5],[2,15,16],[17,18,19],[10,11,12]]],['Review artwork',[[5,13,1],[6,7,8],[9,15,16],[17,18,19],[10,11,12]]],['Review cauldrons',[[13,13,13],[1,2,3],[2,3,4],[3,4,5],[4,5,6]]]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>play(force);panel.append(b);}for(const [name,multiple]of [['Big',15],['Super',30],['Mega',50],['Epic',100]]){const b=document.createElement('button');b.textContent=`Review ${name} Win`;b.onclick=()=>{if(!state.busy)void perform(()=>ceremony(bet()*multiple));};panel.append(b);}
+ document.body.append(panel);
  // A review-only recording captures actual rendered frames, so a moving
  // transform or passing state test cannot stand in for visible animation.
  if(scene.app.canvas.captureStream&&typeof MediaRecorder!=='undefined'){

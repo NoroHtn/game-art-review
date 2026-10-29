@@ -106,6 +106,94 @@
       "bytes": 227720,
       "sha256": "1af8d0cd770f0b663a2a48e67d8bddf48ea4fbc28dbd14111d42d5e14e4c856a"
     },
+    "halloween/assets/edgar/banner-big.webp": {
+      "bytes": 260380,
+      "sha256": "d7dc54e4a80bd1f3e2c634e51c336104555af3f527004cff5ac5e1a81cd7eaa8"
+    },
+    "halloween/assets/edgar/banner-epic.webp": {
+      "bytes": 407004,
+      "sha256": "ac7e81da325aea1a60671097d5e46b0495aefcc12135627f9b1904ece410a7aa"
+    },
+    "halloween/assets/edgar/banner-mega.webp": {
+      "bytes": 394466,
+      "sha256": "7dd1d555562d2bd17c94ab4e405a0168ac36b850e33e4e70ceea811f31edead6"
+    },
+    "halloween/assets/edgar/cell-empty.webp": {
+      "bytes": 137620,
+      "sha256": "997e6eaf269b109ff62a023def62e15fef4ccfc590654e810264b2f7d03d7f44"
+    },
+    "halloween/assets/edgar/coin-spin_00.webp": {
+      "bytes": 68874,
+      "sha256": "3f5383f00fe6e480597b693f0074b8aed312c5cf7f5838b6bb2052d1f01bdbc6"
+    },
+    "halloween/assets/edgar/coin-spin_01.webp": {
+      "bytes": 55580,
+      "sha256": "ec2c1bc2036b793276cd12de20165dc01c87170490bb2c196e5c4e458f6811bb"
+    },
+    "halloween/assets/edgar/coin-spin_02.webp": {
+      "bytes": 15918,
+      "sha256": "7a9fc2dcf783f2f649f7e6d75ecfb510b6968ca3ff8e7853988951cae8252832"
+    },
+    "halloween/assets/edgar/coin-spin_03.webp": {
+      "bytes": 41010,
+      "sha256": "3bb574bbdad602e16b575dfb4d2de46254d2bc9ba5661ba6b82226341676420a"
+    },
+    "halloween/assets/edgar/coin-spin_04.webp": {
+      "bytes": 55304,
+      "sha256": "0db3f66386881565dca687cc2c7d3951bb05904251d6c01e366f1fb8d0c3fd48"
+    },
+    "halloween/assets/edgar/coin-spin_05.webp": {
+      "bytes": 42586,
+      "sha256": "9225171fd9451b19cb3f1434692564a361d3fdb632c00921fdc6fc3b0ddd62a0"
+    },
+    "halloween/assets/edgar/coin-spin_06.webp": {
+      "bytes": 16964,
+      "sha256": "954e7a6c435b5963722d52551b5709c7f446a49baf8478efad44ef1deb5dd5b6"
+    },
+    "halloween/assets/edgar/coin-spin_07.webp": {
+      "bytes": 58540,
+      "sha256": "7cfe054b1e61fe4b57f8d4cb9aa84bcf19da32e9df17e2ae0357a55295881f76"
+    },
+    "halloween/assets/edgar/counter-frame.png": {
+      "bytes": 1285010,
+      "sha256": "5e2711fd932023e429feb73c6b45bed652cf9a1f3dee71b3bcb96860013f18a7"
+    },
+    "halloween/assets/edgar/digits-candy.webp": {
+      "bytes": 127454,
+      "sha256": "759be2e725f5037bc2f2df204c1f00a916e9a52e7519936dc6adb1d31327a925"
+    },
+    "halloween/assets/edgar/logo-type.json": {
+      "bytes": 4524,
+      "sha256": "2fd68636b3318f67ce9ab7c387cd4605dfe0eb9a4c92db23164d1627bd8c7249"
+    },
+    "halloween/assets/edgar/logo-type.png": {
+      "bytes": 1204112,
+      "sha256": "75d8958ec8ed06ed153b267cc547c509ca8ea8767be9bf4adb25988e1d838f07"
+    },
+    "halloween/assets/edgar/pip-flash.webp": {
+      "bytes": 42878,
+      "sha256": "bc1e74f6f6bc6d05dbfa92e732c5f343cef20386bb3f41c283ab910e101019d3"
+    },
+    "halloween/assets/edgar/pip-off.webp": {
+      "bytes": 28060,
+      "sha256": "05121054e3457738775538d15e5fc93a84a1f2af9f7d8f798729b2422fe23351"
+    },
+    "halloween/assets/edgar/pip-on.webp": {
+      "bytes": 47176,
+      "sha256": "b03c1f294c311a95361dfc8ec5724c43c7619abb8d68fe3b9f7eef8898cc44ad"
+    },
+    "halloween/assets/edgar/provenance.json": {
+      "bytes": 7017,
+      "sha256": "6b0d737969524b00250ddc71aef74ab8098b82cbbe9e85c7b8c047390fcecc9f"
+    },
+    "halloween/assets/edgar/sparkle_03.webp": {
+      "bytes": 7094,
+      "sha256": "df11792a1acea49f377e53639210939bbfa885ea0092eca6f1ac0e4029a5ecc5"
+    },
+    "halloween/assets/edgar/total-frame.webp": {
+      "bytes": 310590,
+      "sha256": "c8a97b1d5b4d7f3edef11631b528633715c76f6226d89c506fc99e2b5d1bd676"
+    },
     "halloween/assets/hat_latest.webp": {
       "bytes": 170504,
       "sha256": "53aad0c3e8a5b5e69c0b059d2408cb08d13b3dc69c5cc6ae19197f6c2c6539c8"
@@ -150,49 +238,61 @@
       "bytes": 44782,
       "sha256": "26b13954c5952714a83ecb454eb1c9bdc08bb783e794d9cdc4122b4331265c23"
     },
+    "halloween/bigwin-cartoon.js": {
+      "bytes": 28800,
+      "sha256": "3d97e62dbdb6221c9865be02a4a43e215576955128943e5606a24717f94d8854"
+    },
     "halloween/bonus-atlas.html": {
-      "bytes": 3385,
-      "sha256": "022ac9da490f83a403a23f1e2aafec34d53547e78f1412e0c4dcfc0f05c779e0"
+      "bytes": 3383,
+      "sha256": "c62b8a5050046380f02899fc63a8a25959d1cfaa788ffaf8dd86aef6538a5a5f"
     },
     "halloween/bonus-atlas.js": {
-      "bytes": 7577,
-      "sha256": "d74455c279697a268d50d435c2a8d0d16299b6f3791f42645a1fb5418cce5a06"
+      "bytes": 7575,
+      "sha256": "f07a94506437f5422081647267253329aa3a28675cdf644d4130d1fab79e7351"
     },
     "halloween/cauldron-animation.js": {
       "bytes": 17489,
       "sha256": "3bc10229761d7696d91db961dc507951dfc7c108ffbe275fb9d001aa3c475b22"
     },
     "halloween/controller.js": {
-      "bytes": 26671,
-      "sha256": "a6fe902f32c28a294c4d443548ad8503b8aa422287f6ba788bad3717c04d710a"
+      "bytes": 26980,
+      "sha256": "3249440929fc8b5740ff44dc7c4d3ffacb697b4b8349801cfe3b0b3dc872faba"
     },
     "halloween/controls.css": {
       "bytes": 12908,
       "sha256": "2f9ea117f0f6b5bc850a61d1e0ddb26d24cc8625855e99c76828a81b32a5f86e"
     },
+    "halloween/game-ui.js": {
+      "bytes": 7437,
+      "sha256": "5727881911b023a22b260545690e2c683e768758117e5ff11c871ee491079f20"
+    },
     "halloween/index.html": {
-      "bytes": 8622,
-      "sha256": "b3c85ba023e9ca33bffc915f85ca1482adb0e0c1f7f34c4dbe9ea2bccaa2e0f1"
+      "bytes": 8778,
+      "sha256": "0b5590bc181ff50cb9df915ff653dbdedc9f09f83cfc09c31102f32a6f13374a"
+    },
+    "halloween/logo-type.js": {
+      "bytes": 8243,
+      "sha256": "5663730969f5dddf45f337289603059485ae3cf89177df9e8f508344d4f19171"
     },
     "halloween/pixi-scene.css": {
-      "bytes": 1760,
-      "sha256": "d51e2a4b7d152b75d1d8a99968b063bdbb61fa73e56cdc48301dd88305d4719b"
+      "bytes": 2641,
+      "sha256": "fc3374ceff520ec84e24e2dee20a71ac70c22bb1f323cf918c61c30ce9ae60e3"
     },
     "halloween/pixi-scene.js": {
-      "bytes": 32104,
-      "sha256": "3d0118defbfeb36341b17e0bbcc0c0ea2c685fec157fcf4cd67015e893c63f7d"
+      "bytes": 32103,
+      "sha256": "9b8f5ed2919e6d9eb871f3183fc48cefec43db26164fabca1c4f0e03f6129be9"
     },
     "halloween/presentation.js": {
       "bytes": 16948,
       "sha256": "070639fb21b0a48d8dc8fcb749bc95e0df7e9214286c5e35f3beb4c7ce21d243"
     },
     "halloween/reel-atlas.html": {
-      "bytes": 3318,
-      "sha256": "bed1a197f65ceaad75c57e521c6cdc08b732147a1cdf012381e862c3fe2e63b3"
+      "bytes": 3316,
+      "sha256": "e66796f94f006c07f19abdfc85e7f64caa95c07e406418b79af0a879fb4e46bc"
     },
     "halloween/reel-atlas.js": {
-      "bytes": 6021,
-      "sha256": "47ec54d7a451e1bcd2e4e0f3169d11b29f701546293f208dc901fc2f788ea9e7"
+      "bytes": 6019,
+      "sha256": "e1582b06d68be302767a3647459864b6a2d3d659fac181295355476508893ef6"
     },
     "halloween/reel-motion.js": {
       "bytes": 16062,
@@ -213,6 +313,10 @@
     "halloween/vendor/PIXI-LICENSE.txt": {
       "bytes": 1092,
       "sha256": "5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473"
+    },
+    "halloween/win-fountain.js": {
+      "bytes": 1061,
+      "sha256": "cd3c82b8c86bfd9a9253cb36fa3f5025acb2fb0b4ca98c5af4a13d0dfe28c04e"
     },
     "index.html": {
       "bytes": 270,
